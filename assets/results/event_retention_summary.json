@@ -1,0 +1,86 @@
+{
+  "source": "esc50",
+  "primary_metrics": [
+    "mean_accuracy",
+    "macro_f1"
+  ],
+  "relative_metric": "probe accuracy divided by pooled log-mel accuracy; may exceed 1.0",
+  "reference_accuracy": 0.442,
+  "rows": [
+    {
+      "file": "features_encodec_esc50.npz",
+      "representation": "EnCodec (first 2 codebooks)",
+      "feature_dim": 2048,
+      "n_clips": 2000,
+      "folds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "mean_accuracy": 0.5215,
+      "std_accuracy": 0.019659603251337508,
+      "macro_f1": 0.4927362151708537,
+      "chance_majority": 0.3,
+      "fold_accuracy": [
+        0.4975,
+        0.5375,
+        0.54,
+        0.4975,
+        0.535
+      ],
+      "relative_probe_accuracy_vs_logmel": 1.179864253393665
+    },
+    {
+      "file": "features_mel_probe_esc50.npz",
+      "representation": "Log-mel (mean + std)",
+      "feature_dim": 128,
+      "n_clips": 2000,
+      "folds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "mean_accuracy": 0.442,
+      "std_accuracy": 0.008860022573334684,
+      "macro_f1": 0.36989959267173095,
+      "chance_majority": 0.3,
+      "fold_accuracy": [
+        0.44,
+        0.435,
+        0.445,
+        0.4575,
+        0.4325
+      ],
+      "relative_probe_accuracy_vs_logmel": 1.0
+    },
+    {
+      "file": "features_melrvq_esc50.npz",
+      "representation": "Custom mel-RVQ (first 2 codebooks)",
+      "feature_dim": 512,
+      "n_clips": 2000,
+      "folds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "mean_accuracy": 0.3775,
+      "std_accuracy": 0.02919760264131286,
+      "macro_f1": 0.3450028260969307,
+      "chance_majority": 0.3,
+      "fold_accuracy": [
+        0.34,
+        0.3675,
+        0.365,
+        0.3875,
+        0.4275
+      ],
+      "relative_probe_accuracy_vs_logmel": 0.8540723981900452
+    }
+  ]
+}

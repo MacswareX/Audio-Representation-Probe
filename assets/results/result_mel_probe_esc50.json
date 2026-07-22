@@ -1,0 +1,28 @@
+{
+  "representation": "logmel_pool(mean+std)",
+  "source": "esc50",
+  "feature_dim": 128,
+  "n_clips": 2000,
+  "n_groups": 6,
+  "label": "group",
+  "mean_accuracy": 0.442,
+  "std_accuracy": 0.008860022573334684,
+  "macro_f1": 0.36989959267173095,
+  "chance_majority": 0.3,
+  "fold_accuracy": [
+    0.44,
+    0.435,
+    0.445,
+    0.4575,
+    0.4325
+  ],
+  "config": {
+    "sample_rate": 16000,
+    "n_fft": 1024,
+    "hop_length": 320,
+    "n_mels": 64
+  },
+  "bitrate_kbps": null,
+  "n_params": 0,
+  "encode_latency_ms": null
+}

@@ -1,0 +1,25 @@
+# data + large artifacts
+data/
+*.zip
+*.wav
+*.flac
+
+# Results: keep compact real JSON/PNG artifacts, ignore heavy features and
+# development-only synthetic/legacy figures.
+assets/results/*.npz
+assets/results/*_synthetic.json
+assets/figures/*_synthetic.png
+assets/figures/event_retention_bars.png
+
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+*.egg-info/
+
+# os/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

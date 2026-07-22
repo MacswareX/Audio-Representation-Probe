@@ -1,0 +1,17 @@
+# Extra dependencies for the EnCodec / CLAP token paths (NOT needed for the
+# first mel baseline). Install when you reach scripts 3+.
+#
+#   pip install -r requirements-extra.txt
+#
+# NOTE: the `env_01` conda env (Python 3.10, torch 2.5.1) already has
+# soundfile, librosa and imageio-ffmpeg. You mainly need transformers here.
+transformers>=4.44      # provides EncodecModel, ClapModel
+huggingface_hub>=0.24
+soundfile>=0.12         # general audio I/O (present in env_01)
+librosa>=0.10           # STFT/mel/MFCC convenience (present in env_01)
+imageio-ffmpeg>=0.5     # bundled ffmpeg binary for non-WAV decode (present in env_01)
+datasets>=2.20          # convenience dataset loading (optional)
+
+# Optional alternative tokenizers to compare against EnCodec (Week 3+):
+# snac                  # multi-scale RVQ codec (coarse tokens sampled less often)
+# descript-audio-codec  # DAC, richest acoustic reconstruction

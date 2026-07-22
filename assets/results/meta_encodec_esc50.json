@@ -1,0 +1,18 @@
+{
+  "representation": "encodec_codehist(first2cb)",
+  "source": "esc50",
+  "feature_dim": 2048,
+  "n_clips": 2000,
+  "encodec_model": "facebook/encodec_24khz",
+  "bandwidth_kbps": 6.0,
+  "codebook_size": 1024,
+  "codebook0_utilization": {
+    "codebook_size": 1024,
+    "codes_used": 1012,
+    "utilization": 0.98828125,
+    "entropy_bits": 8.031061204386921,
+    "perplexity": 261.5714377541437
+  },
+  "n_params": 14851810,
+  "encode_latency_ms": 38.17136061191559
+}

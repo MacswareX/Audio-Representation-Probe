@@ -1,0 +1,40 @@
+# Default configuration for audio-event-tokenizer.
+# Values here override src/config.py DEFAULTS.
+
+# --- audio / features ---
+sample_rate: 16000
+n_fft: 1024
+hop_length: 320       # 50 frames/sec at 16 kHz
+n_mels: 64
+f_min: 20
+f_max: 8000
+clip_seconds: 5.0
+
+# --- labels ---
+label: group          # "group" (6 embodied event groups) or "category" (50 ESC classes)
+
+# --- probe ---
+probe_C: 1.0
+probe_max_iter: 2000
+seed: 0
+
+# --- EnCodec baseline (gated; needs transformers) ---
+encodec_model: facebook/encodec_24khz
+encodec_bandwidth: 6.0       # kbps -> 8 codebooks at 24 kHz
+encodec_sample_rate: 24000
+encodec_probe_codebooks: 2   # probe the FIRST K codebooks (coarse-token semantics test)
+
+# --- custom mel-RVQ tokenizer (scripts/6) ---
+mel_frames: 256              # fixed mel time frames fed to the tokenizer
+melrvq_latent_dim: 64
+melrvq_codebook_size: 256
+melrvq_num_quantizers: 4
+melrvq_probe_codebooks: 2    # probe the FIRST K learned codebooks
+melrvq_epochs: 20
+melrvq_batch_size: 32
+melrvq_lr: 0.0003
+
+# --- paths (relative to repo root) ---
+data_dir: data/ESC-50-master
+results_dir: assets/results
+figures_dir: assets/figures
