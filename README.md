@@ -155,7 +155,6 @@ audio-event-tokenizer/
   src/                       Audio, representation, probe, and RVQ modules
   assets/figures/            Generated benchmark figures
   assets/results/            Compact JSON results; feature arrays ignored by Git
-  reading_notes/             Research bridge notes
   TECHNICAL_REPORT.md        Extended methods, results, and limitations
 ```
 
