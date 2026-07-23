@@ -1,8 +1,8 @@
 """FIRST RUNNABLE BASELINE -- raw log-mel + linear probe (zero extra deps).
 
-This is the "upper reference" representation: how much embodied-event
-information is linearly decodable from the audio BEFORE any token bottleneck.
-Every codec/tokenizer is later compared against this number via event-retention.
+This is the pooled log-mel reference interface. Every codec/tokenizer is later
+compared against its probe score via the secondary relative-accuracy ratio; it
+is not an information-theoretic upper bound.
 
 Runs with only packages already in the environment (torch, torchaudio,
 numpy, scipy, scikit-learn, pandas, matplotlib).
