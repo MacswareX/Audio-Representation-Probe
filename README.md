@@ -94,10 +94,13 @@ interval.
 ![Held-out probe performance](assets/figures/probe_performance_esc50.png)
 
 Under this probe, EnCodec histograms exceed the pooled log-mel reference by
-7.95 accuracy points. The custom model falls 6.45 points below log-mel despite
-using 248 of 256 entries in its first codebook. This negative result suggests
-that codebook utilization and pooled-mel reconstruction are not sufficient to
-produce event-aligned tokens.
+7.95 accuracy points. The custom model falls 6.45 points below log-mel.
+Codebook-0 utilization is 96.9% with perplexity 185.9, ruling out collapse
+as an explanation. The underperformance likely reflects a training objective
+(pooled-mel mean reconstruction) that provides no event-discriminative signal,
+combined with a bag-of-codes probe that discards temporal order. This negative
+result motivates two well-defined next steps: preserve token order in
+evaluation, and introduce an explicit retention or contrastive objective.
 
 The project also records nominal stream and local implementation diagnostics:
 
