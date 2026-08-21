@@ -1,12 +1,11 @@
-"""Embodied event/state taxonomy over ESC-50.
+"""Designed event-group taxonomy over ESC-50.
 
-The point of this project is NOT generic sound classification. We re-group the
-50 ESC-50 categories into a small set of embodied event/state groups, so the
-metric measures whether tokens preserve "what happened / what state changed"
-information that an embodied agent could act on.
+The 50 ESC-50 categories are mapped into six project-specific event groups so
+the frozen probe can evaluate event-group accessibility from compact audio
+representation interfaces.
 
-This is a deliberate, documented first-pass taxonomy rather than a canonical
-embodied-audio ontology. Each of the 50 categories maps to exactly one group.
+This is an exploratory mapping, not a canonical event taxonomy or evidence of
+embodied-agent utility. Each of the 50 categories maps to exactly one group.
 """
 from __future__ import annotations
 
@@ -26,12 +25,12 @@ ESC50_CATEGORIES = [
 
 # group -> list of ESC-50 categories
 EVENT_GROUPS = {
-    # things a person does (state evidence about humans in the scene)
+    # human presence and activity sounds
     "human_activity": [
         "crying_baby", "sneezing", "clapping", "breathing", "coughing",
         "footsteps", "laughing", "brushing_teeth", "snoring",
     ],
-    # liquids / pouring / flow (classic vision-occluded state changes)
+    # liquids, pouring, flow, and related environmental sounds
     "water_liquid": [
         "water_drops", "pouring_water", "toilet_flush", "drinking_sipping",
         "sea_waves", "rain",
@@ -45,12 +44,12 @@ EVENT_GROUPS = {
     "object_interaction": [
         "door_wood_knock", "door_wood_creaks", "can_opening",
     ],
-    # machines / appliances / vehicles (appliance & device state)
+    # machines, appliances, vehicles, and related mechanical sounds
     "appliance_mechanical": [
         "washing_machine", "vacuum_cleaner", "clock_alarm", "engine", "chainsaw",
         "helicopter", "airplane", "train", "siren", "car_horn", "church_bells",
     ],
-    # ambient / natural / animal backgrounds (mostly distractors for embodiment)
+    # ambient, natural, and animal background sounds
     "ambient_natural": [
         "dog", "rooster", "pig", "cow", "frog", "cat", "hen", "insects", "sheep",
         "crow", "crackling_fire", "crickets", "chirping_birds", "wind", "thunderstorm",
@@ -89,6 +88,6 @@ def validate() -> None:
 
 if __name__ == "__main__":
     validate()
-    print("OK: 50 ESC-50 categories ->", len(GROUP_NAMES), "embodied groups")
+    print("OK: 50 ESC-50 categories ->", len(GROUP_NAMES), "designed event groups")
     for g, cats in EVENT_GROUPS.items():
         print(f"  {g:22s} ({len(cats):2d}): {', '.join(cats)}")

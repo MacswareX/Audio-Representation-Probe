@@ -1,4 +1,4 @@
-# Audio Event Tokenizer: An Event-Retention Benchmark
+# Audio Representation Probe: A Diagnostic Study of Event-Group Accessibility
 
 Technical report v0.1
 Author: MacswareX
@@ -6,88 +6,86 @@ Date: 2026-07-15
 
 ## Abstract
 
-This report evaluates whether compact audio representations preserve event/state
-information relevant to embodied agents. The benchmark reorganizes the 50
-ESC-50 classes into six designed embodied groups and applies the same frozen
-logistic-regression probe to three interfaces: pooled log-mel statistics,
-histograms from the first two codebooks of pretrained EnCodec, and histograms
-from the first two codebooks of a small custom mel residual-vector-quantized
-autoencoder (mel-RVQ). Across ESC-50's five official folds, EnCodec obtains
-52.15% accuracy and 0.4927 macro-F1, compared with 44.20% and 0.3699 for pooled
-log-mel and 37.75% and 0.3450 for the custom mel-RVQ. EnCodec therefore exposes
-more linearly decodable group information than this particular pooled log-mel
-reference. The custom model has fewer trainable parameters and lower nominal
-rate, but its coarse tokens retain less event information. Local encoding
-timings are reported as implementation diagnostics rather than an end-to-end
-comparison. The result is a representation diagnostic, not an audio foundation
-model or a closed-loop world-model evaluation.
+This report evaluates how much event-group-discriminative information is
+linearly accessible from three compact audio representation interfaces under a
+common downstream protocol. The benchmark reorganizes 50 ESC-50 categories
+into six designed event groups and compares pooled log-mel statistics,
+first-two-codebook histograms from pretrained EnCodec, and
+first-two-codebook histograms from a small custom mel residual-vector-quantized
+representation model (mel-RVQ). Across ESC-50's five official folds, EnCodec
+obtains 52.15% accuracy and 0.4927 macro-F1, compared with 44.20% and 0.3699
+for pooled log-mel and 37.75% and 0.3450 for custom mel-RVQ. These observations
+compare complete representation/readout interfaces; they do not establish an
+inherent semantic hierarchy across RVQ stages or identify where task-facing
+accessibility changes. Nominal discrete index rates and local encoding timings
+are implementation diagnostics, not matched audio-codec comparisons. The
+project is not a semantic tokenizer, sound-event-detection system, audio
+foundation model, embodied-agent evaluation, or audio world model.
 
-## 1. Motivation
+## 1. Motivation and Research Question
 
-Audio can reveal physical events that vision misses because of occlusion,
-lighting, viewpoint, or limited field of view. Contact, pouring, appliance
-state, footsteps, and object interaction are not merely sound labels: they can
-be evidence of changes in an environment.
+Environmental audio can carry evidence of contact, pouring, human activity, and
+mechanical activity. Compact continuous features and discrete RVQ code IDs are
+both possible interfaces to downstream models, but a representation's training
+objective and codebook usage do not by themselves determine its measured
+performance on a specific downstream task.
 
-Modern audio generation and speech systems frequently expose discrete neural
-codec tokens to sequence models. SoundStream introduced an influential
-convolutional encoder/decoder with residual vector quantization (RVQ), and
-EnCodec made a practical pretrained general-audio codec available. Later
-systems such as Mimi and SpeechTokenizer distinguish coarse/semantic and
-fine/acoustic code streams. These developments motivate a narrower empirical
-question:
+The narrow empirical question is:
 
-> How much embodied event-group information is linearly decodable from the
-> coarse part of an audio-token representation?
+> How much event-group information is accessible from different compact audio
+> representation interfaces under a common downstream probe?
 
-The benchmark intentionally isolates this representation question before any
-temporal dynamics, action conditioning, or robot-policy integration.
+A secondary motivating question asks which representation stages might limit
+that accessibility. The archived experiments do not perform the controlled
+stage-wise interventions needed to answer this causally.
+
+The first-K prefix is tested as an experimental interface; semantic superiority
+of early RVQ stages is not assumed.
 
 ## 2. Relation to ObsCodec
 
 ObsCodec studied bottlenecks for low-dimensional multi-agent observations using
-PCA, autoencoders, a quantized autoencoder, beta-VAE, and single-codebook VQ-VAE.
-This project carries forward three practices:
+PCA, autoencoders, a quantized autoencoder, beta-VAE, and single-codebook
+VQ-VAE. This project carries forward three practices:
 
-- compare learned representations against simple references;
-- measure bottleneck health and preserve collapse/negative results;
-- report cost together with task-facing quality.
+- Compare learned representations against simple references.
+- Inspect bottleneck health and report negative findings.
+- Record implementation cost alongside task-facing probe performance.
 
-The domain changes from low-dimensional PettingZoo observation vectors to
-environmental audio.
-The quantizer changes from a single VQ bottleneck to RVQ, and the primary
-task-facing metric changes from reconstruction to event-group probe
-performance. This is an evaluation progression from reconstruction toward a
-task-facing semantic proxy, not evidence of a completed embodied system.
+The domain changes from low-dimensional observation vectors to environmental
+audio, while the primary reported task-facing outcome becomes event-group
+linear-probe performance. The relationship is conceptual, not an integrated
+embodied system or a measurement of downstream policy utility.
 
 ## 3. Benchmark Setup
 
 ### 3.1 Dataset
 
-ESC-50 contains 2,000 five-second mono recordings in 50 classes, with 40 clips
-per class and five official source-aware folds. Audio is read from the official
-WAV distribution. The dataset is licensed for non-commercial use under CC
-BY-NC.
+ESC-50 contains 2,000 five-second mono recordings in 50 categories, with 40 clips
+per category and five official source-aware folds. Audio is read from the
+official WAV distribution. The dataset is licensed for non-commercial use
+under CC BY-NC.
 
-### 3.2 Embodied grouping
+### 3.2 Designed Event Groups
 
-The original classes are mapped into six designed groups:
+The original categories are mapped into six designed groups:
 
 | Group | Clips | Intended interpretation |
 |---|---:|---|
-| `human_activity` | 360 | Human presence/activity evidence |
-| `water_liquid` | 240 | Flow, pouring, drinking, flushing, rain/waves |
+| `human_activity` | 360 | Human presence and activity evidence |
+| `water_liquid` | 240 | Flow, pouring, drinking, flushing, rain, and waves |
 | `impact_contact` | 240 | Sharp contact and transient interaction |
-| `object_interaction` | 120 | Door/container manipulation |
-| `appliance_mechanical` | 440 | Machine, appliance, vehicle, alarm state |
-| `ambient_natural` | 600 | Natural/animal background and distractors |
+| `object_interaction` | 120 | Door and container manipulation |
+| `appliance_mechanical` | 440 | Machine, appliance, vehicle, and alarm activity |
+| `ambient_natural` | 600 | Natural and animal background sounds |
 
-The grouping is deliberately not balanced. Majority-class accuracy is 0.30,
-so macro-F1 is reported with accuracy.
+This mapping is a project-specific experimental ontology, not a canonical
+embodied-audio or sound-event-detection benchmark. Its majority-class baseline
+accuracy is 0.30, so macro-F1 accompanies accuracy.
 
-### 3.3 Audio frontend
+### 3.3 Audio Frontend
 
-The log-mel and custom-tokenizer path uses:
+The pooled log-mel reference and custom mel-RVQ representation path use:
 
 | Parameter | Value |
 |---|---:|
@@ -96,69 +94,101 @@ The log-mel and custom-tokenizer path uses:
 | Hop length | 320 samples (50 frames/s) |
 | Mel bins | 64 |
 | Frequency range | 20 Hz to 8 kHz |
-| Fixed tokenizer input | 256 mel frames |
+| Fixed custom-model input | 256 mel frames |
 
-The final experiments ran under Python 3.10, PyTorch/Torchaudio 2.5.1 with CUDA
-12.4, and an NVIDIA GeForce RTX 3050 with 8 GB VRAM.
+The archived experiments ran under Python 3.10, PyTorch/Torchaudio 2.5.1 with
+CUDA 12.4, and an NVIDIA GeForce RTX 3050 with 8 GB VRAM.
 
-### 3.4 Probe protocol
+### 3.4 Frozen Probe Protocol
 
-Every representation is converted into one clip-level feature vector. A
-`StandardScaler` and multinomial logistic-regression classifier (`C=1.0`,
-`max_iter=2000`) are fitted on four folds and evaluated on the fifth, repeated
-for all five official folds. The same probe implementation and seed are used
-for every representation.
-
-Absolute held-out accuracy and macro-F1 are primary. A secondary relative probe
-ratio is defined as:
+Every frozen representation is converted into one clip-level feature vector.
+A `StandardScaler` and multinomial logistic-regression classifier (`C=1.0`,
+`max_iter=2000`) are fitted on four official folds and evaluated on the fifth.
+The process is repeated for all five held-out folds with the same probe
+implementation and seed.
 
 ```text
-relative probe accuracy = representation accuracy / pooled log-mel accuracy
+frozen representation -> clip-level readout -> StandardScaler
+                      -> multinomial logistic regression
+                      -> held-out fold metrics
 ```
 
-This ratio may exceed 1.0 and is not a literal percentage of retained mutual
-information.
+Held-out accuracy and macro-F1 are the primary outcomes. Macro-F1 is computed
+over pooled out-of-fold predictions; reported fold standard deviations are
+population standard deviations, not confidence intervals.
 
-## 4. Representations
+The secondary relative score is:
 
-### 4.1 Pooled log-mel reference
+```text
+relative probe accuracy vs. log-mel
+    = representation probe accuracy / pooled log-mel probe accuracy
+```
+
+This ratio may exceed 1.0. It measures neither mutual information nor a literal
+fraction of information retained. A frozen linear probe measures accessibility
+under the chosen representation and readout, not all information potentially
+present in the underlying signal.
+
+## 4. Representation Interfaces
+
+### 4.1 Pooled Log-Mel Reference
 
 Each log-mel bin is summarized by its temporal mean and standard deviation,
 producing a 128-dimensional vector. This is a compact classical reference, not
 a theoretical upper bound on audio information.
 
-### 4.2 Pretrained EnCodec
+### 4.2 Pretrained EnCodec First-K Prefix
 
-`facebook/encodec_24khz` encodes resampled 24 kHz audio at the configured 6
-kbps bandwidth. The probe uses normalized token histograms from the first two
-of the resulting codebooks, producing 2,048 features. A two-codebook prefix has
-an approximate nominal rate of 1.5 kbps, although extraction in this experiment
-uses the full 6 kbps encoding configuration.
+`facebook/encodec_24khz` encodes resampled 24 kHz audio at the configured
+6 kbps bandwidth. The probe uses normalized discrete-code histograms from the
+first two RVQ codebooks, producing 2,048 features. A two-codebook prefix has an
+approximate nominal index rate of 1.5 kbps, although extraction in the archived
+experiment uses the full 6 kbps encoding configuration.
 
-### 4.3 Custom mel-RVQ
+The selection of an early-codebook prefix is an experimental interface choice.
+It does not establish that early stages contain superior event semantics.
 
-The custom model contains a convolutional mel encoder, four EMA-updated RVQ
-codebooks of size 256 with data-dependent initialization and inactive-code
-replacement, and a lightweight decoder. It has 321,280 trainable parameters.
-The probe uses normalized histograms from the first two codebooks (512
-features). The full four-codebook stream is approximately 0.4096 kbps; the
-two-codebook prefix is approximately 0.2048 kbps.
+### 4.3 Custom Mel-RVQ Representation
 
-The model is trained for 20 epochs using pooled-mel reconstruction plus VQ
-commitment loss. Its final full-dataset codebook-0 utilization is 96.9% with
-perplexity 185.9, showing that the codebook is active rather than collapsed.
+The custom path is:
 
-Important protocol caveat: the custom tokenizer is trained without labels on
-all ESC-50 clips before fold-wise probe evaluation. Its current result is a
-transductive representation diagnostic. A strict generalization benchmark must
-train a separate tokenizer on the four training folds for each held-out fold,
-or pretrain it on a separate corpus.
+```text
+waveform -> log-mel -> convolutional encoder -> continuous latent
+         -> four-stage EMA RVQ -> quantized latent / discrete code IDs
+         -> decoder -> temporally averaged 64-dimensional mel target
+```
 
-## 5. Results
+The model uses four EMA-updated RVQ codebooks of size 256, data-dependent
+initialization, inactive-code replacement, and a lightweight decoder. It has
+321,280 trainable parameters. The downstream probe uses normalized histograms
+from the first two codebooks, producing 512 features.
 
-### 5.1 Probe quality
+The full four-codebook nominal discrete index stream is approximately 0.4096
+kbps; the two-codebook prefix is approximately 0.2048 kbps. These are computed
+index-stream rates, not measured end-to-end waveform-codec rates. The decoder
+reconstructs a temporally averaged 64-dimensional mel target; it does not
+reconstruct waveform audio.
 
-| Representation | Accuracy | Fold std | Macro-F1 | Relative vs log-mel |
+The archived model was trained for 20 epochs using pooled-mel reconstruction
+plus VQ commitment loss. Its final full-dataset codebook-0 utilization is 96.9%
+with perplexity 185.9. This observation rules out a fully inactive first
+codebook, but it does not establish event-group discriminability, causal
+utility, or semantic alignment.
+
+The custom representation model is trained without labels on all ESC-50 clips
+before fold-wise probe evaluation. Its current result is therefore a
+transductive representation diagnostic. A strict generalization benchmark would
+train a separate representation model on the four training folds for each
+held-out fold, or pretrain it on a separate non-evaluation corpus.
+
+## 5. Archived Results
+
+All numerical values below are taken from the existing archived artifacts. No
+model was retrained and no archived result was regenerated for this report.
+
+### 5.1 Probe Performance
+
+| Representation | Accuracy | Fold std | Macro-F1 | Relative vs. log-mel |
 |---|---:|---:|---:|---:|
 | Pooled log-mel | 0.4420 | 0.0089 | 0.3699 | 1.00 |
 | EnCodec, first 2 codebooks | **0.5215** | 0.0197 | **0.4927** | **1.18** |
@@ -172,35 +202,43 @@ Per-fold accuracies are:
 | EnCodec | 0.4975 | 0.5375 | 0.5400 | 0.4975 | 0.5350 |
 | Custom mel-RVQ | 0.3400 | 0.3675 | 0.3650 | 0.3875 | 0.4275 |
 
-EnCodec exceeds pooled log-mel by 7.95 percentage points and the custom model
-by 14.4 points. The result means that the selected EnCodec code-histogram
-interface exposes more linearly decodable group information than the two other
-interfaces; it does not prove that compression creates information or that
-EnCodec is optimal for an embodied policy.
+**[OBSERVED]** EnCodec exceeds pooled log-mel by 7.95 percentage points and
+custom mel-RVQ by 14.4 points under the selected prefix-histogram readout.
 
-![Held-out probe performance](assets/figures/probe_performance_esc50.png)
+**[INFERENCE]** The selected EnCodec representation/readout combination exposes
+more linearly accessible event-group-discriminative information to this
+particular probe than the two other tested combinations.
 
-### 5.2 Cost and codebook health
+**[HYPOTHESIS]** Different codebook prefixes, sequence-preserving readouts, or
+controlled feature dimensions could change the ordering. No archived
+experiment tests those alternatives.
 
-| Representation | Nominal stream | Params | Encode latency | Codebook-0 utilization | Perplexity |
+![Held-out event-group probe performance](assets/figures/probe_performance_esc50.png)
+
+### 5.2 Nominal Index Rates and Codebook Diagnostics
+
+| Representation | Nominal index stream | Params | Local encode timing | Codebook-0 utilization | Perplexity |
 |---|---:|---:|---:|---:|---:|
 | EnCodec | 1.5 kbps prefix; 6 kbps configured | 14.85M | 38.17 ms/clip | 98.8% | 261.6 |
 | Custom mel-RVQ | 0.20 kbps prefix; 0.41 kbps full | 0.32M trainable | 1.43 ms/clip | 96.9% | 185.9 |
 
-Parameter counts and nominal rates indicate a smaller custom representation,
-but the latency values are not directly comparable: EnCodec timing starts from
-waveforms and includes resampling, whereas custom timing starts from precomputed
-mel tensors. The custom result is therefore a diagnostic quality-cost point,
-not evidence of a deployment advantage.
+For the custom model, the reported stream is a nominal count of discrete index
+bits. It excludes framing, entropy-coding overhead, and waveform
+reconstruction. EnCodec timing starts from waveform input and includes
+resampling; custom timing starts from precomputed mel tensors. The values
+therefore do not support an apples-to-apples codec-efficiency or deployment
+comparison.
 
-### 5.3 Group-level behavior
+### 5.3 Group-Level Behavior
 
 For pooled log-mel, diagonal recalls are highest for
 `appliance_mechanical` (0.58), `ambient_natural` (0.56), and
 `human_activity` (0.45). `impact_contact` reaches 0.30, while
-`object_interaction` (0.17) and `water_liquid` (0.15) are difficult. Frequent
-confusion into `ambient_natural` partly reflects both acoustic overlap and the
-larger number of classes assigned to that group.
+`object_interaction` (0.17) and `water_liquid` (0.15) are difficult.
+
+**[INFERENCE]** Frequent confusion into `ambient_natural` may reflect acoustic
+overlap, class imbalance, or the design of the six-group ontology. The
+available confusion matrices do not distinguish those mechanisms.
 
 Representation-specific normalized confusion matrices are provided in:
 
@@ -208,27 +246,53 @@ Representation-specific normalized confusion matrices are provided in:
 - `assets/figures/confusion_encodec_esc50.png`
 - `assets/figures/confusion_melrvq_esc50.png`
 
-## 6. Negative and Diagnostic Findings
+## 6. Diagnostic Findings and Claim Boundaries
 
-### 6.1 Codebook health is not semantic sufficiency
+### 6.1 Active Codebooks Do Not Establish Event-Group Accessibility
 
-The custom tokenizer uses 248 of 256 first-codebook entries, yet underperforms
-both EnCodec and pooled log-mel. High utilization prevents a trivial collapse
-explanation but does not guarantee that token partitions align with event/state
-semantics.
+**[OBSERVED]** The custom model uses 248 of 256 first-codebook entries and
+obtains 0.3775 event-group probe accuracy.
 
-### 6.2 Reconstruction optimization is insufficient
+**[INFERENCE]** Active codebook usage excludes a trivial explanation in which
+the first codebook never receives assignments. It does not establish that the
+selected assignments align with the six designed event groups.
 
-The custom training reconstruction loss drops from 0.0204 to approximately
-0.0025, while event-group probe accuracy remains 0.3775. Improving the pooled
-reconstruction objective alone does not ensure event-preserving coarse tokens.
+**[HYPOTHESIS]** Later RVQ stages or a different readout may expose
+complementary event-group-discriminative information.
 
-### 6.3 Designed group difficulty is uneven
+### 6.2 Reconstruction Loss and Probe Performance Are Distinct Observations
 
-Water/liquid and object-interaction groups are poorly separated by the compact
-log-mel reference. The taxonomy may combine acoustically heterogeneous classes,
-and clip-level histogram/statistical pooling removes temporal ordering that can
-distinguish actions such as pouring, knocking, and opening.
+**[OBSERVED]** Archived custom-model training reconstruction loss decreases
+from 0.0204 to approximately 0.0025, while the resulting first-two-codebook
+histogram obtains 0.3775 event-group probe accuracy.
+
+**[INFERENCE]** In this particular training run, improvement on the pooled-mel
+reconstruction objective coincides with comparatively weak performance of the
+selected downstream readout.
+
+**[HYPOTHESIS]** Objective mismatch, frontend pooling, continuous-latent
+structure, quantization, prefix selection, or histogram pooling could
+contribute. The experiment does not prove independence between reconstruction
+and event information or identify quantization as the primary loss point.
+
+### 6.3 Designed Group Difficulty Is Uneven
+
+**[OBSERVED]** Water/liquid and object-interaction groups have lower recall for
+the pooled log-mel interface than several other designed groups.
+
+**[HYPOTHESIS]** Within-group acoustic heterogeneity and the removal of
+temporal ordering may contribute. Controlled group remapping and
+sequence-preserving readouts are needed to test those explanations.
+
+### 6.4 What the Benchmark Does Not Establish
+
+- A semantic or event-aware tokenizer.
+- An inherent semantic hierarchy across early and later RVQ codebooks.
+- Statistical or causal independence of reconstruction and event-related task
+  information.
+- Quantization as the dominant source of task-facing information loss.
+- Embodied-world-state estimation, planning, or robot-policy utility.
+- Matched waveform-codec efficiency or comparable end-to-end latency.
 
 ## 7. Limitations
 
@@ -238,46 +302,64 @@ distinguish actions such as pouring, knocking, and opening.
 3. The six-group mapping is designed and imbalanced; it is not a canonical
    benchmark ontology.
 4. Feature dimensionalities differ (128, 512, and 2,048), so results compare
-   complete representation/pooling interfaces rather than pure codec content.
+   complete representation/readout interfaces rather than equal-dimensional
+   representations.
 5. Histogram and mean/std pooling discard temporal order.
-6. The custom tokenizer result is transductive because unsupervised tokenizer
-   training sees all clips before fold probing.
+6. The custom result is transductive because unsupervised representation-model
+   training sees all clips before held-out-fold probing.
 7. EnCodec is externally pretrained on much broader data, while the custom
-   tokenizer is trained only on ESC-50; the comparison is deliberately
-   practical rather than compute/data matched.
-8. Latency is measured on one Windows/CUDA workstation and is not a deployment
-   guarantee; preprocessing differs between the two measured paths.
-9. Relative probe accuracy can exceed one and must not be interpreted as a
-   bounded information-retention percentage.
+   model is trained only on ESC-50; training data and compute are not matched.
+8. Local latency is measured on one Windows/CUDA workstation with different
+   preprocessing boundaries across the two representation paths.
+9. Relative probe accuracy can exceed one and is not an information-theoretic
+   quantity.
+10. A single custom-model training run and five evaluation folds do not
+    establish statistical superiority.
 
-## 8. Next Work
+## 8. Next Discriminating Experiments
 
 The next experiments should be ordered as follows:
 
-1. Make custom-tokenizer evaluation strict by training fold-wise or pretraining
-   on an external non-evaluation corpus.
-2. Preserve token timing using sequence probes instead of only histograms.
-3. Add noise, mixing, cropping, and second-source generalization tests.
-4. Distill event embeddings from PANNs or CLAP into codebook 0, analogous to
-   semantic distillation in speech tokenizers.
-5. Train a small causal transformer on coarse token sequences and compare
-   next-token loss with downstream event retention.
-6. Build a controlled action-conditioned transition dataset and evaluate
-   future event-token prediction against no-action, shuffled-action, random,
-   and persistence baselines.
+1. Build a representation-stage ladder spanning frontend features, continuous
+   encoder latents, quantized latents, and discrete-code readouts.
+2. Run frozen probes for individual RVQ stages, later stages, and first-K
+   prefixes without assuming that earlier stages are inherently semantic.
+3. Compare sequence-preserving and Bag-of-Codes readouts while controlling
+   feature dimensionality.
+4. Separate representation-model training strictly from held-out clips and
+   report multiple random seeds.
+5. Only after these diagnostics, test objective interventions with explicit
+   controls and the same downstream probe.
 
-Only step 6 introduces the minimum temporal and interventional structure needed
-for an audio-world-model claim.
+These are future hypotheses and proposed controls. None has been performed in
+the archived benchmark.
 
-## 9. Conclusion
+## 9. Historical Artifact Provenance
 
-The benchmark demonstrates a working path from audio preprocessing through
-coarse codec tokens to task-facing and cost-aware evaluation. Pretrained
-EnCodec's first two codebooks are the strongest tested representation for
-six-group ESC-50 probing. The custom mel-RVQ establishes an efficient,
-independently implemented alternative with healthy codebooks, but its lower
-event score shows that reconstruction and utilization are not enough: coarse
-tokens need an explicit semantic/event objective or richer training data.
+The original `assets/results/event_retention_summary.json` and the other
+archived ESC-50 JSON files remain unchanged. Historical keys such as
+`chance_majority` and custom-model `bitrate_kbps` reflect the naming used when
+those artifacts were created; they mean majority-class baseline accuracy and
+nominal discrete index rate, respectively. New summaries use corrected field
+names and a source-specific `event_group_probe_summary_<source>.json` filename.
+
+The former `scripts/4_eval_event_retention.py` path remains a compatibility
+entry point. Its canonical replacement is
+`scripts/4_eval_event_group_probe.py`.
+
+## 10. Conclusion
+
+**[OBSERVED]** Under the archived five-fold ESC-50 protocol, the pretrained
+EnCodec first-two-codebook histogram obtains the highest event-group probe
+accuracy among three tested representation/readout interfaces.
+
+**[INFERENCE]** The custom mel-RVQ model provides a smaller discrete
+representation interface with an active first codebook, but its selected
+prefix-histogram readout has lower event-group accessibility under this probe.
+
+**[HYPOTHESIS]** Stage-wise, codebook-wise, readout-controlled, and strictly
+separated experiments may reveal where that accessibility differs. Establishing
+any mechanism requires additional experiments rather than stronger terminology.
 
 ## References
 
@@ -286,7 +368,7 @@ tokens need an explicit semantic/event objective or richer training data.
 - N. Zeghidour et al., "SoundStream: An End-to-End Neural Audio Codec," 2021.
 - A. Defossez et al., "High Fidelity Neural Audio Compression," 2022.
 - H. Siuzdak, "SNAC: Multi-Scale Neural Audio Codec," 2024.
-- A. Défossez et al., "Moshi: a speech-text foundation model for real-time
+- A. Defossez et al., "Moshi: a speech-text foundation model for real-time
   dialogue," 2024.
 - F. Zhang and M. Gienger, "Learning Robot Manipulation from Audio World
   Models," arXiv:2512.08405, 2025.

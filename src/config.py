@@ -24,7 +24,7 @@ DEFAULTS = {
     "f_max": 8000,
     "clip_seconds": 5.0,         # ESC-50 clips are 5 s; pad/trim to this
     # --- labels ---
-    "label": "group",            # "group" (embodied event groups) or "category" (50 ESC classes)
+    "label": "group",            # "group" (designed event groups) or "category" (50 ESC classes)
     # --- probe ---
     "probe_C": 1.0,
     "probe_max_iter": 2000,
@@ -33,13 +33,13 @@ DEFAULTS = {
     "encodec_model": "facebook/encodec_24khz",
     "encodec_bandwidth": 6.0,    # kbps -> 8 codebooks at 24 kHz
     "encodec_sample_rate": 24000,
-    "encodec_probe_codebooks": 2,  # use the FIRST K codebooks to probe coarse-token semantics
-    # --- custom mel-RVQ tokenizer (scripts/6) ---
-    "mel_frames": 256,             # fixed mel time frames fed to the tokenizer
+    "encodec_probe_codebooks": 2,  # probe the first-K RVQ codebook prefix
+    # --- custom mel-RVQ representation model (scripts/6) ---
+    "mel_frames": 256,             # fixed mel frames fed to the representation model
     "melrvq_latent_dim": 64,
     "melrvq_codebook_size": 256,
     "melrvq_num_quantizers": 4,
-    "melrvq_probe_codebooks": 2,   # probe the FIRST K learned codebooks
+    "melrvq_probe_codebooks": 2,   # probe the first-K learned codebook prefix
     "melrvq_epochs": 20,
     "melrvq_batch_size": 32,
     "melrvq_lr": 0.0003,

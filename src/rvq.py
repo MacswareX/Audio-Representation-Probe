@@ -1,9 +1,9 @@
 """Vector quantization modules: EMA-VQ and Residual VQ (RVQ).
 
 ObsCodec used a single-codebook VQ-VAE; this module extends that implementation
-to residual quantization. The benchmark probes the first K codebooks as a coarse
-token interface and measures event retention rather than assuming semantic
-content emerges.
+to residual quantization. The benchmark probes the first-K RVQ codebook prefix
+as an experimental discrete-code interface without assuming that early stages
+are inherently more useful for the designed event groups.
 
 These modules are intentionally small and self-contained so they run on a
 single 8 GB GPU. They are unit-constructible and have a __main__ smoke test.
@@ -100,7 +100,7 @@ class ResidualVQ(nn.Module):
 
     Returns the summed quantized latent, mean VQ loss, a list of index tensors
     (one [B, T] per codebook), and a list of per-codebook perplexities.
-    Use the first k codebooks to reconstruct a coarse "preview".
+    The first k codebooks form a partial RVQ approximation.
     """
 
     def __init__(self, num_quantizers=4, num_embeddings=512, embedding_dim=64,

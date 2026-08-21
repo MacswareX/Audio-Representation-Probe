@@ -1,12 +1,14 @@
-"""Train the small mel-RVQ tokenizer and export its token features.
+"""Train the small mel-RVQ representation model and export discrete-code features.
 
-This custom tokenizer path is compared with the pretrained EnCodec interface. It:
+This custom representation path is compared with the pretrained EnCodec interface. It:
   1. builds a fixed-size log-mel dataset (synthetic or ESC-50),
   2. trains MelRVQVAE (reconstruction + VQ loss) with EMA codebooks,
   3. tracks codebook utilization/perplexity,
-  4. exports per-clip token features (bag-of-codes over the first K codebooks)
-     to features_melrvq_<source>.npz for scripts/4_eval_event_retention.py,
-  5. records cost parameters (bitrate, params, latency) in a result JSON.
+  4. exports per-clip token features (bag-of-codes over the first-K RVQ prefix)
+     to features_melrvq_<source>.npz for scripts/4_eval_event_group_probe.py,
+  5. records nominal discrete index rate, parameter count, and latency.
+
+The decoder reconstructs a temporally averaged mel target, not waveform audio.
 
 Mel features run on CPU when the GPU spectrogram path is unavailable (env_01);
 the neural net trains on CUDA when possible.
@@ -185,22 +187,22 @@ def main():
     feats, cb0_all, latent_T = extract_token_features(model, X, K, cb, comp_device)
     enc_latency_ms = 1000.0 * (time.time() - t1) / max(X.shape[0], 1)
 
-    # cost parameters
+    # Nominal discrete index-stream diagnostics, not waveform-codec efficiency.
     frame_rate = latent_T / cfg["clip_seconds"]                 # tokens/sec per codebook
     bits_per_frame = nq * np.log2(cb)
-    bitrate_kbps = frame_rate * bits_per_frame / 1000.0
+    nominal_index_rate_kbps = frame_rate * bits_per_frame / 1000.0
     util = M.codebook_utilization(cb0_all, cb)
 
     tag = f"melrvq_{source}"
     np.savez(os.path.join(outdir, f"features_{tag}.npz"),
              X=feats, y=y, folds=folds, group_names=np.array(eg.GROUP_NAMES))
     result = {
-        "representation": f"melrvq_codehist(first{K}cb)",
+        "representation": f"melrvq_codehist(prefix_first{K}cb)",
         "source": source, "feature_dim": int(feats.shape[1]),
         "n_clips": int(feats.shape[0]),
         "num_quantizers": nq, "codebook_size": cb,
         "latent_frames": int(latent_T), "token_rate_hz_per_cb": float(frame_rate),
-        "bitrate_kbps": float(bitrate_kbps),
+        "nominal_index_rate_kbps": float(nominal_index_rate_kbps),
         "codebook0": util,
         "n_params": int(n_params), "train_seconds": train_time,
         "encode_latency_ms": enc_latency_ms, "epochs": epochs,
@@ -209,13 +211,13 @@ def main():
     with open(os.path.join(outdir, f"result_{tag}.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
 
-    print(f"\n=== mel-RVQ tokenizer ({source}) ===")
-    print(f"  params={n_params/1e6:.2f}M  bitrate~{bitrate_kbps:.2f} kbps "
+    print(f"\n=== mel-RVQ representation model ({source}) ===")
+    print(f"  params={n_params/1e6:.2f}M  nominal_index_rate~{nominal_index_rate_kbps:.2f} kbps "
           f"({nq} codebooks x {cb} @ {frame_rate:.1f} Hz)")
     print(f"  codebook0 util={util['utilization']:.2f} perplexity={util['perplexity']:.1f}")
     print(f"  latency={enc_latency_ms:.1f} ms/clip  train={train_time:.1f}s")
     print(f"  saved features_{tag}.npz + result_{tag}.json")
-    print("  next: python scripts/4_eval_event_retention.py")
+    print("  next: python scripts/4_eval_event_group_probe.py")
 
 
 if __name__ == "__main__":

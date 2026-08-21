@@ -82,7 +82,7 @@ def main():
     try:
         from src import event_groups as eg
         eg.validate()
-        print(f"  OK: 50 ESC-50 categories -> {len(eg.GROUP_NAMES)} embodied groups")
+        print(f"  OK: 50 ESC-50 categories -> {len(eg.GROUP_NAMES)} designed event groups")
     except Exception as e:
         print("  taxonomy error:", e)
 

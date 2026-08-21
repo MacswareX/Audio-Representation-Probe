@@ -37,8 +37,9 @@ def plot_confusion(cm, labels, path, title="Confusion matrix"):
     return path
 
 
-def plot_probe_performance(labels, accuracies, macro_f1, path, chance=None,
-                           title="Held-out embodied-group probe performance"):
+def plot_probe_performance(labels, accuracies, macro_f1, path,
+                           majority_class_baseline=None,
+                           title="Held-out event-group probe performance"):
     _ensure_dir(path)
     fig, ax = plt.subplots(figsize=(2.0 + 1.5 * len(labels), 4.5))
     x = np.arange(len(labels))
@@ -50,8 +51,9 @@ def plot_probe_performance(labels, accuracies, macro_f1, path, chance=None,
     ax.set_ylabel("held-out score")
     ax.set_ylim(0, 1)
     ax.set_title(title)
-    if chance is not None:
-        ax.axhline(chance, ls="--", c="grey", label=f"majority baseline = {chance:.2f}")
+    if majority_class_baseline is not None:
+        ax.axhline(majority_class_baseline, ls="--", c="grey",
+                   label=f"majority-class baseline = {majority_class_baseline:.2f}")
     ax.legend()
     for bars in (bars_acc, bars_f1):
         for b in bars:

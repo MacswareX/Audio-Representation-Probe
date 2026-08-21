@@ -1,8 +1,8 @@
 """FIRST RUNNABLE BASELINE -- raw log-mel + linear probe (zero extra deps).
 
-This is the pooled log-mel reference interface. Every codec/tokenizer is later
-compared against its probe score via the secondary relative-accuracy ratio; it
-is not an information-theoretic upper bound.
+This is the pooled log-mel reference interface. Each compact representation is
+later compared against its probe score via a secondary relative-accuracy ratio;
+it is not an information-theoretic upper bound.
 
 Runs with only packages already in the environment (torch, torchaudio,
 numpy, scipy, scikit-learn, pandas, matplotlib).
@@ -109,12 +109,12 @@ def main():
     cv = P.crossval(X, y, folds, C=cfg["probe_C"], max_iter=cfg["probe_max_iter"],
                     seed=cfg["seed"])
     cls = M.classification_metrics(cv["y_true"], cv["y_pred"])
-    chance = M.chance_level(y)
+    majority_baseline = M.majority_class_baseline_accuracy(y)
 
     print("\n=== RESULT: raw log-mel + linear probe ===")
     print(f"  mean accuracy : {cv['mean_accuracy']:.3f} +/- {cv['std_accuracy']:.3f}")
     print(f"  macro F1      : {cls['macro_f1']:.3f}")
-    print(f"  chance (maj.) : {chance:.3f}")
+    print(f"  majority class: {majority_baseline:.3f}")
     print(f"  per-fold acc  : {[round(a,3) for a in cv['fold_accuracy']]}")
 
     # --- save artifacts ---
@@ -132,11 +132,11 @@ def main():
         "mean_accuracy": cv["mean_accuracy"],
         "std_accuracy": cv["std_accuracy"],
         "macro_f1": cls["macro_f1"],
-        "chance_majority": chance,
+        "majority_class_baseline_accuracy": majority_baseline,
         "fold_accuracy": cv["fold_accuracy"],
         "config": {k: cfg[k] for k in ("sample_rate", "n_fft", "hop_length", "n_mels")},
-        # cost-parameter slots (filled by codec scripts; mel has no codec cost)
-        "bitrate_kbps": None, "n_params": 0, "encode_latency_ms": None,
+        # Diagnostic slots; pooled log-mel does not produce a discrete index stream.
+        "nominal_index_rate_kbps": None, "n_params": 0, "encode_latency_ms": None,
     }
     with open(os.path.join(outdir, f"result_{tag}.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)

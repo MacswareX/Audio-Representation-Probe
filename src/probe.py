@@ -2,9 +2,9 @@
 
 A linear probe on frozen features asks:
 "how much task-relevant information is linearly decodable from this
-representation?" We use it identically on raw log-mel features and on
-codec-token features, while reporting that their dimensions and pretraining
-conditions differ.
+representation?" We use it identically on pooled log-mel and discrete-code
+histogram interfaces, while reporting that their dimensions and pretraining
+conditions differ. The result is not a mutual-information estimate.
 """
 from __future__ import annotations
 

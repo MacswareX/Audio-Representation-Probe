@@ -1,4 +1,4 @@
-"""Extract EnCodec discrete tokens and build coarse-codebook probe features.
+"""Extract EnCodec discrete tokens and build prefix-codebook probe features.
 
 GATED: needs `transformers` + `huggingface_hub` (see requirements-extra.txt).
 First run downloads facebook/encodec_24khz (~90 MB).
@@ -7,7 +7,7 @@ First run downloads facebook/encodec_24khz (~90 MB).
     python scripts/3_extract_encodec_tokens.py --self-test      # quick check
     python scripts/3_extract_encodec_tokens.py                  # real ESC-50
 
-Produces features_encodec_<source>.npz consumed by 4_eval_event_retention.py.
+Produces features_encodec_<source>.npz consumed by 4_eval_event_group_probe.py.
 """
 import argparse
 import json
@@ -117,7 +117,7 @@ def main():
     np.savez(os.path.join(outdir, f"features_{tag}.npz"),
              X=X, y=y, folds=folds, group_names=np.array(eg.GROUP_NAMES))
     meta = {
-        "representation": f"encodec_codehist(first{cfg['encodec_probe_codebooks']}cb)",
+        "representation": f"encodec_codehist(prefix_first{cfg['encodec_probe_codebooks']}cb)",
         "source": source, "feature_dim": int(X.shape[1]), "n_clips": int(X.shape[0]),
         "encodec_model": cfg["encodec_model"], "bandwidth_kbps": cfg["encodec_bandwidth"],
         "codebook_size": codebook_size, "codebook0_utilization": util,
@@ -127,7 +127,7 @@ def main():
         json.dump(meta, f, indent=2)
     print(f"saved features_{tag}.npz ; codebook0 util={util['utilization']:.2f} "
           f"perplexity={util['perplexity']:.1f} ; latency={enc_latency_ms:.1f} ms/clip")
-    print("next: python scripts/4_eval_event_retention.py")
+    print("next: python scripts/4_eval_event_group_probe.py")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Make summary figures from result JSON files.
+"""Make summary figures from corrected or historical archived result JSON files.
 
     python scripts/5_make_figures.py
 """
@@ -22,10 +22,15 @@ def main():
     results_dir = cfg["results_dir"]
     figures_dir = cfg["figures_dir"]
 
-    summary = os.path.join(results_dir, "event_retention_summary.json")
+    summary = os.path.join(results_dir, f"event_group_probe_summary_{args.source}.json")
     if not os.path.exists(summary):
-        print("Summary not found. Run scripts/4_eval_event_retention.py first.")
-        sys.exit(2)
+        # Historical ESC-50 archive is preserved unchanged for provenance.
+        historical_summary = os.path.join(results_dir, "event_retention_summary.json")
+        if os.path.exists(historical_summary):
+            summary = historical_summary
+        else:
+            print("Summary not found. Run scripts/4_eval_event_group_probe.py first.")
+            sys.exit(2)
 
     with open(summary, encoding="utf-8") as f:
         data = json.load(f)
@@ -39,15 +44,19 @@ def main():
     accs = [r["mean_accuracy"] for r in rows]
     f1s = [r["macro_f1"] for r in rows]
     relative = [r["relative_probe_accuracy_vs_logmel"] for r in rows]
-    chance = rows[0].get("chance_majority") if rows else None
     if not labels:
         print("Summary contains no rows. Run script 4 first.")
         sys.exit(2)
+    majority_baseline = rows[0].get("majority_class_baseline_accuracy")
+    if majority_baseline is None:
+        # Archived JSON uses this historical majority-class-baseline field name.
+        majority_baseline = rows[0].get("chance_majority")
 
     os.makedirs(figures_dir, exist_ok=True)
     performance = os.path.join(figures_dir, f"probe_performance_{args.source}.png")
     ratio = os.path.join(figures_dir, f"relative_probe_accuracy_{args.source}.png")
-    plot_probe_performance(labels, accs, f1s, performance, chance=chance)
+    plot_probe_performance(labels, accs, f1s, performance,
+                           majority_class_baseline=majority_baseline)
     plot_relative_probe_accuracy(labels, relative, ratio)
     print("saved", performance)
     print("saved", ratio)

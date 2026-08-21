@@ -14,7 +14,7 @@ from . import event_groups as eg
 
 
 def build_manifest(data_dir: str):
-    """Read meta/esc50.csv and attach embodied group labels.
+    """Read meta/esc50.csv and attach designed event-group labels.
 
     Returns a pandas DataFrame with columns:
         filepath, filename, fold, category, target(0-49),
@@ -41,7 +41,7 @@ def make_synthetic_dataset(groups=None, n_per_class=40, sr=16000, seconds=2.0, s
 
     Returns a list of dicts: {wav, sr, group, group_index, fold, category}.
     Each group gets a distinct fundamental + harmonics so a mel probe can
-    separate them well above chance -> proves the pipeline works.
+    separate them well above the majority-class baseline and verify the pipeline.
     """
     if groups is None:
         groups = eg.GROUP_NAMES

@@ -1,4 +1,4 @@
-"""Download + unpack ESC-50, then build the embodied-group manifest.
+"""Download + unpack ESC-50, then build the designed event-group manifest.
 
 Run:  python scripts/1_prepare_data.py            # downloads to ./data
       python scripts/1_prepare_data.py --check    # just validate an existing copy
@@ -65,7 +65,7 @@ def main():
     from src.datasets_esc50 import build_manifest
     df = build_manifest(data_dir)
     print(f"manifest: {len(df)} clips, {df['category'].nunique()} categories")
-    print("clips per embodied group:")
+    print("clips per designed event group:")
     print(df["group"].value_counts().to_string())
     out = os.path.join(args.data_root, "manifest.csv")
     df.to_csv(out, index=False)

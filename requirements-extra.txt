@@ -13,5 +13,5 @@ imageio-ffmpeg>=0.5     # bundled ffmpeg binary for non-WAV decode (present in e
 datasets>=2.20          # convenience dataset loading (optional)
 
 # Optional alternative tokenizers to compare against EnCodec (Week 3+):
-# snac                  # multi-scale RVQ codec (coarse tokens sampled less often)
+# snac                  # multi-scale RVQ codec with different token rates
 # descript-audio-codec  # DAC, richest acoustic reconstruction

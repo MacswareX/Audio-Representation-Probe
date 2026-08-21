@@ -1,8 +1,8 @@
-"""Metrics: event retention, codebook health, and cost parameters.
+"""Metrics for event-group probes, codebook health, and implementation cost.
 
-A codec study should report cost parameters alongside quality. This module
-therefore exposes codebook utilization/perplexity and provides a place to record
-bitrate, latency, and parameter counts in result JSON files.
+The benchmark reports classification metrics, majority-class baseline accuracy,
+relative probe accuracy, codebook utilization/perplexity, nominal discrete
+index rates, latency, and parameter counts where applicable.
 """
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ def confusion(y_true, y_pred, n_labels):
     return confusion_matrix(np.asarray(y_true), np.asarray(y_pred), labels=labels)
 
 
-def chance_level(y) -> float:
-    """Majority-class accuracy = honest 'chance' floor for imbalanced groups."""
+def majority_class_baseline_accuracy(y) -> float:
+    """Return the accuracy of always predicting the most frequent class."""
     y = np.asarray(y)
     if len(y) == 0:
         return 0.0
@@ -36,15 +36,15 @@ def chance_level(y) -> float:
     return float(counts.max() / counts.sum())
 
 
-def event_retention(acc_compressed: float, acc_reference: float) -> float:
-    """Return compressed probe accuracy divided by reference probe accuracy.
+def relative_probe_accuracy(acc_representation: float, acc_reference: float) -> float:
+    """Return representation probe accuracy divided by reference probe accuracy.
 
     The reference is typically pooled log-mel. This ratio can exceed one and is
-    not a bounded information-retention percentage.
+    not a bounded fraction of mutual information.
     """
     if acc_reference <= 0:
         return 0.0
-    return float(acc_compressed / acc_reference)
+    return float(acc_representation / acc_reference)
 
 
 def codebook_utilization(indices, codebook_size: int):

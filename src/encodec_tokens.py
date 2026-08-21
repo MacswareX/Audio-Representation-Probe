@@ -46,8 +46,8 @@ def extract_codes(model, processor, wav, sr, bandwidth=6.0, device="cpu"):
 def codes_to_histogram_feature(codes, codebook_size=1024, n_codebooks=2):
     """codes [n_q, T] -> normalized bag-of-codes over the first n_codebooks.
 
-    Feature dim = n_codebooks * codebook_size. Using the first k codebooks
-    isolates coarse-token information content.
+    Feature dim = n_codebooks * codebook_size. The first-k prefix is a chosen
+    experimental interface; superiority of early codebooks is not assumed.
     """
     nq = min(n_codebooks, codes.shape[0])
     feats = []

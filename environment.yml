@@ -1,4 +1,4 @@
-name: audio-event-tokenizer
+name: audio-representation-probe
 channels:
   - pytorch
   - nvidia

@@ -1,4 +1,4 @@
-"""Small mel-spectrogram RVQ autoencoder used by the custom tokenizer path.
+"""Small mel-spectrogram RVQ autoencoder for the custom representation path.
 
 The model is a compact comparison point for the pretrained EnCodec interface.
 It uses the ResidualVQ implementation from rvq.py and reconstructs a pooled-mel

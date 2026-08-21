@@ -1,10 +1,10 @@
-"""audio-event-tokenizer: source package.
+"""Audio Representation Probe: source package.
 
-A small benchmark for testing whether compressed audio tokens preserve
-event/state information useful for embodied agents.
+A small benchmark of event-group accessibility from compact audio
+representation interfaces under a common frozen linear-probe protocol.
 
-Bridge from ObsCodec (multi-agent observation compression) to embodied audio:
-representation bottlenecks -> acoustic state bottlenecks.
+The connection to ObsCodec is conceptual; this package does not evaluate
+embodied agents, world models, or downstream policies.
 """
 
 __version__ = "0.0.1"
