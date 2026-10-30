@@ -3,9 +3,9 @@
 *.png binary
 
 # Preserve byte identity of transferred evidence (including historical CRLF).
-evidence/fsd50k/metrics/* -text
-evidence/fsd50k/paired_contrasts.json -text
-evidence/fsd50k/results_reported.csv -text
-evidence/fsd50k/validation/** -text
-evidence/fsd50k/results.csv -text
-experiments/fsd50k/source_snapshot/** -text
+evidence/fsd50k/metrics/* -text whitespace=cr-at-eol
+evidence/fsd50k/paired_contrasts.json -text whitespace=cr-at-eol
+evidence/fsd50k/results_reported.csv -text whitespace=cr-at-eol
+evidence/fsd50k/validation/** -text whitespace=cr-at-eol
+evidence/fsd50k/results.csv -text whitespace=cr-at-eol
+experiments/fsd50k/source_snapshot/** -text whitespace=cr-at-eol
