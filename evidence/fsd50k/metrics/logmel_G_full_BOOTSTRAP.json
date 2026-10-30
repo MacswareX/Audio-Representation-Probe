@@ -1,0 +1,13 @@
+{
+  "identity": {
+    "score_sha256": "05d7fdf32cc2fc040eb9f720a38ad3c1cdd77240b704089a00644a1bbe794c11",
+    "groups_sha256": "42cabcbae1f5c3373dcf87b35110ba4cdcdba60fe2e65488eb0b6b603a3b8cca",
+    "draws": 2000,
+    "seed": 17170911
+  },
+  "elapsed_s": 97.90700000000652,
+  "undefined_draws": 0,
+  "groups": 2297,
+  "fixed_orders": true,
+  "refits": 0
+}

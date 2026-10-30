@@ -1,0 +1,72 @@
+"""Gated complete 51197-source extraction, one model/process, committed pooled rows."""
+from common import *
+from time_coverage import *
+from stage_gate import gate,execution_identity
+import argparse,traceback
+
+def main(model,variant='main'):
+    stage=('features_beats' if model=='beats' else 'features_eight') if variant=='main' else 'context_features';gate(stage);start();status('FULL_FEATURES_START',model=model,variant=variant)
+    from native import MODELS
+    adapter=MODELS[model]();directory=ROOT/('features' if variant=='main' else 'context30_features')/model;directory.mkdir(parents=True,exist_ok=True)
+    dim={'logmel':64,'e1_z':64,'e1_q2':64,'e1_q4':64,'cnn6':512,'encodec_z':128,'encodec_q2':128,'encodec_q4':128,'beats':768}
+    additional=sum(51197*dim[rep]*factor*4+128 for rep in adapter.reps for pool,factor in [('G',2),('T4',8)] if not (directory/(rep+'_'+pool+'.npy')).exists())
+    current=sum(p.stat().st_size for p in ROOT.rglob('*') if p.is_file())
+    assert current+additional<=8_000_000_000 and shutil.disk_usage('D:/').free-additional>=8_000_000_000,'Preallocation exceeds root/disk grant; no smaller matrix fallback'
+    identity=dict(manifest_sha256=sha(ROOT/'manifest.jsonl'),protocol_lock_sha256=sha(ROOT/'PROTOCOL_LOCK.json'),execution_lock_sha256=execution_identity(),model=model,model_state_hash=adapter.before,rows=51197,variant=variant,maximum_window_seconds=5 if variant=='main' else 30)
+    assert adapter.before==read(ROOT/'PROTOCOL.json')['native_state_hashes'][model]
+    frozen(directory/'IDENTITY.json',identity);committed={};journal=directory/'rows.jsonl'
+    if journal.exists():
+        lines=journal.read_text().splitlines()
+        for line_index,line in enumerate(lines):
+            try:r=json.loads(line)
+            except json.JSONDecodeError:
+                assert line_index==len(lines)-1,'Journal corruption before final line'
+                archive=directory/f'rows_interrupted_{int(time.time())}.jsonl';os.replace(journal,archive)
+                journal.write_text(''.join(json.dumps(v)+'\n' for v in committed.values()),encoding='utf-8')
+                write(directory/f'JOURNAL_RECOVERY_{int(time.time())}.json',dict(archive=str(archive),archive_sha256=sha(archive),committed_rows_reused=len(committed),last_uncommitted_row_only_recomputed=True));break
+            assert r['index'] not in committed;committed[r['index']]=r
+    maps={}
+    for rep in adapter.reps:
+        for pool,factor in [('G',2),('T4',8)]:
+            key=rep+'_'+pool;p=directory/(key+'.npy');shape=(51197,dim[rep]*factor)
+            maps[key]=np.load(p,mmap_mode='r+') if p.exists() else np.lib.format.open_memmap(p,mode='w+',dtype=np.float32,shape=shape)
+            assert maps[key].shape==shape and maps[key].dtype==np.float32
+    def remap():
+        for k,v in list(maps.items()):v.flush();v._mmap.close();maps[k]=np.load(directory/(k+'.npy'),mmap_mode='r+')
+    with (ROOT/'manifest.jsonl').open(encoding='utf-8') as src,journal.open('a',encoding='utf-8') as log:
+        for line in src:
+            row=json.loads(line);i=row['index']
+            if i in committed:
+                r=committed[i];assert r['id']==row['id'];digest=hashlib.sha256(b''.join(maps[k][i].tobytes() for k in sorted(maps))).hexdigest();assert digest==r['row_sha256']
+                if i%100==0:remap()
+                continue
+            t0=time.monotonic();p=ROOT/'pilot'/model/(row['id']+'.npz');meta=p.with_suffix('.json')
+            if variant=='main' and p.exists() and meta.exists():
+                a=load(p);r=read(meta);assert str(a['id'])==row['id'] and r['duration']==row['duration_seconds'];arrays={k:a[k] for k in maps};reused=True
+            else:
+                x=read_resample(row,adapter.sample_rate);b=np.array(row['original_boundaries']);m=row['resampled'][str(adapter.sample_rate)]['boundaries'];pools={};duration=row['duration_seconds']
+                if variant=='context30':
+                    n=(row['frames']+30*row['sample_rate']-1)//(30*row['sample_rate']);b=np.array([j*row['frames']//n for j in range(n+1)])
+                    m=mapped_boundaries(b,row['sample_rate'],adapter.sample_rate,len(x));assert np.diff(b).max()<=30*row['sample_rate'] and np.diff(b).sum()==row['frames']
+                for j,(lo,hi) in enumerate(zip(m[:-1],m[1:])):
+                    span=(b[j+1]-b[j])/row['sample_rate'];values,geo=adapter.extract(x[lo:hi],check=False)
+                    for rep,(v,anchors) in values.items():
+                        if rep not in pools:pools[rep]=ClipPool(v.shape[0],duration)
+                        pools[rep].add(v,anchors*span/((hi-lo)/adapter.sample_rate),b[j]/row['sample_rate'],span)
+                arrays={}
+                for rep,pool in pools.items():g,t4,_=pool.result();arrays[rep+'_G']=g;arrays[rep+'_T4']=t4
+                del x,values,pools;reused=False
+            for key,vec in arrays.items():assert np.isfinite(vec).all();maps[key][i]=vec;maps[key].flush()
+            digest=hashlib.sha256(b''.join(maps[k][i].tobytes() for k in sorted(maps))).hexdigest()
+            r=dict(index=i,id=row['id'],row_sha256=digest,reused_core= reused,elapsed_s=time.monotonic()-t0);log.write(json.dumps(r)+'\n');log.flush();os.fsync(log.fileno());committed[i]=r
+            if len(committed)%100==0:remap();status('FULL_FEATURES_COMMITTED',model=model,rows=len(committed))
+    assert len(committed)==51197 and model_hash(adapter.model)==adapter.before
+    write(directory/'COMPLETE.json',dict(identity=identity,rows=len(committed),journal_sha256=sha(journal),features={k:dict(shape=list(v.shape),sha256=sha(directory/(k+'.npy'))) for k,v in maps.items()},frozen_model_unchanged=True))
+    return stage
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--model',choices=('arp','cnn6','encodec','beats'),required=True);p.add_argument('--variant',choices=('main','context30'),default='main');args=p.parse_args();ok=False;stage=('features_beats' if args.model=='beats' else 'features_eight') if args.variant=='main' else 'context_features'
+    try:main(args.model,args.variant);ok=True
+    except Exception:write(ROOT/f'FULL_FEATURE_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,stage+':'+args.model)
+    sys.exit(0 if ok else 1)

@@ -1,0 +1,7 @@
+{
+  "index": 0,
+  "lambda_": 0.0001,
+  "selection_metric": "validation 200-class macroAP; exact ties larger lambda",
+  "val_refit": false,
+  "all_validation_artifacts_complete": true
+}

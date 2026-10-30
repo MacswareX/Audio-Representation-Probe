@@ -1,0 +1,37 @@
+"""Bounded complete train-source reset versus whole native-context diagnostic."""
+from common import *
+from time_coverage import *
+import argparse,traceback
+IDS=('166225','9559','10628','16121','17509','83299')
+
+def main(model):
+    start();status('CORE_CONTEXT_START',model=model)
+    from native import MODELS
+    adapter=MODELS[model]();rows=[r for r in read(ROOT/'PILOT_PANEL.json')['rows'] if r['id'] in IDS];records=[]
+    frozen(ROOT/'CONTEXT_PANEL.json',dict(ids=list(IDS),selection='predeclared train-only complete sources: .3s,5s,5.008s,10s,30s,33.071s; no labels or heldout selection',scope='Small representation/cost diagnostic, not full discrimination context sensitivity'))
+    for row in rows:
+        path=ROOT/'context'/model/(row['id']+'.json')
+        if path.exists():records.append(read(path));continue
+        duration=row['duration_seconds'];res=resource();tokens=max(1,int((duration-.025)/.01+1)//16)*8
+        # Conservative six attention-sized float32 intermediates plus non-attention allowance.
+        additional=6*12*tokens*tokens*4+200_000_000 if model=='beats' else 250_000_000
+        if res['system_available']-additional<1073741824 or res['rss']+additional>1610612736:
+            record=dict(id=row['id'],duration=duration,status='WHOLE_CONTEXT_MEMORY_DEFERRED',forecast_additional_bytes=additional,resource=res,required_route='Run identical whole-context adapter and fixed IDs on approved host with at least 1GiB reserve; no streaming-equivalence claim. full_context.py prepared for subsequent explicit stage authorization.')
+            write(path,record);records.append(record);continue
+        x=read_resample(row,adapter.sample_rate);t0=time.monotonic();values,geometry=adapter.extract(x,check=False);arrays={};comparison={};reset=load(ROOT/'pilot'/model/(row['id']+'.npz'))
+        for rep,(v,anchors) in values.items():
+            pool=ClipPool(v.shape[0],duration);pool.add(v,anchors*(duration/(len(x)/adapter.sample_rate)),0,duration);g,t4,rec=pool.result()
+            for kind,vec in [('G',g),('T4',t4)]:
+                key=rep+'_'+kind;before=reset[key].astype(np.float64);after=vec.astype(np.float64);arrays[key]=vec
+                comparison[key]=dict(max_abs=float(abs(after-before).max()),relative_l2=float(np.linalg.norm(after-before)/max(np.linalg.norm(before),1e-12)),cosine=float(np.dot(before,after)/max(np.linalg.norm(before)*np.linalg.norm(after),1e-12)))
+        npz(path.with_suffix('.npz'),**arrays);record=dict(id=row['id'],duration=duration,status='WHOLE_NATIVE_COMPLETE',whole_s=time.monotonic()-t0,geometry=geometry,comparison=comparison,resource=resource())
+        write(path,record);records.append(record);del x,values,reset;status('CORE_CONTEXT_SOURCE_COMPLETE',model=model,id=row['id'])
+    assert model_hash(adapter.model)==adapter.before
+    write(ROOT/f'{model}_CONTEXT_RECEIPT.json',dict(records=records,frozen_model_unchanged=True,interpretation='Whole native context versus reset window representation changes include native frontend boundary effects, logmel per-window dB reference, convolution, recurrent state and attention; not a pure isolated LSTM effect.',no_classification_scoring=True))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--model',choices=('arp','cnn6','encodec','beats'),required=True);args=p.parse_args();ok=False
+    try:main(args.model);ok=True
+    except Exception:write(ROOT/f'CONTEXT_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,'context_'+args.model)
+    sys.exit(0 if ok else 1)

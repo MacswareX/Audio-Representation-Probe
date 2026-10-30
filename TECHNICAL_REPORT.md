@@ -1,3 +1,7 @@
+> Historical exploratory ESC-50 report, retained without numerical revision.
+> Later FSD records and source-transfer status: [overview](README.md) and
+> [project evolution](docs/project_evolution.md).
+
 # Audio Representation Probe: A Diagnostic Study of Event-Group Accessibility
 
 Technical report v0.1

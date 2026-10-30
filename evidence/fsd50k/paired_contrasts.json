@@ -1,0 +1,844 @@
+{
+  "draws": 2000,
+  "seed": 17170911,
+  "conditional_on_saved_models": true,
+  "multiplicity": "descriptive pointwise intervals, no familywise significance claim",
+  "contrasts": [
+    {
+      "a": "logmel_T4_full",
+      "b": "logmel_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.010484724338149853,
+        0.016804525591042545
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_T4_dedup",
+      "b": "logmel_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.010478774258851957,
+        0.016791886186599967
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_G_dedup",
+      "b": "logmel_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.9575244111738956e-05,
+        7.431582876677918e-06
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_T4_dedup",
+      "b": "logmel_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -2.5471055377387918e-05,
+        3.3658244915613433e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3752699096718197,
+        -0.35565230293533173
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.37527788299399234,
+        -0.3556802879075647
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.34724469815618614,
+        -0.3283837676315377
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "logmel_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3472699238789386,
+        -0.3283798555333275
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_T4_full",
+      "b": "e1_z_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.01019511254469301,
+        0.017715683736848658
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_T4_dedup",
+      "b": "e1_z_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.010214499727387659,
+        0.017759465054326178
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_G_dedup",
+      "b": "e1_z_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -3.636657970913261e-05,
+        2.715630566113604e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_T4_dedup",
+      "b": "e1_z_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.7991576255616674e-05,
+        6.313809351279961e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3397772850266071,
+        -0.32073840682992866
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.33980330004152476,
+        -0.32076710017523435
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.31151791286497166,
+        -0.29282882855437464
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_z_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.31150600949375046,
+        -0.292835918833517
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_T4_full",
+      "b": "e1_q2_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.009431674911006306,
+        0.015671578054294574
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_T4_dedup",
+      "b": "e1_q2_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.009427305043109038,
+        0.015655470459068024
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_G_dedup",
+      "b": "e1_q2_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.902535450583019e-05,
+        3.467611382993484e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_T4_dedup",
+      "b": "e1_q2_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -2.765595579529191e-05,
+        1.2674941354958557e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3635828204939421,
+        -0.3447763233994555
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.36360239238835773,
+        -0.34476707715817256
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3374623693544062,
+        -0.3179232102281924
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q2_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.33747258338377795,
+        -0.31793872584036614
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_full",
+      "b": "e1_q4_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.010507258013065079,
+        0.01698772361493123
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_dedup",
+      "b": "e1_q4_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.010507092621563017,
+        0.016999876609904003
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_G_dedup",
+      "b": "e1_q4_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -5.75319679878384e-05,
+        4.719729283351111e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_dedup",
+      "b": "e1_q4_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -2.2927355225766875e-05,
+        2.6571823215849513e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.355186081021755,
+        -0.3359560299508518
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3551915192294324,
+        -0.3359878828670351
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.32738747038899807,
+        -0.30855202846736157
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3273936234282481,
+        -0.30855289228251953
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "cnn6_T4_full",
+      "b": "cnn6_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        -0.018048929378591507,
+        -0.009968858697457526
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "cnn6_T4_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        -0.018089680848957783,
+        -0.009985104869429136
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "cnn6_G_dedup",
+      "b": "cnn6_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -9.107806623392945e-06,
+        4.963255018701899e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "cnn6_T4_dedup",
+      "b": "cnn6_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.7005280198764684e-05,
+        3.841407241493427e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_T4_full",
+      "b": "encodec_z_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        6.25801327151607e-05,
+        0.008413342359920568
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_T4_dedup",
+      "b": "encodec_z_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        5.02498235463468e-07,
+        0.008384781831327686
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_G_dedup",
+      "b": "encodec_z_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -2.4043327356499526e-05,
+        6.591695411377602e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_T4_dedup",
+      "b": "encodec_z_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -9.914962986395104e-05,
+        5.7253407286943885e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3047459627812025,
+        -0.2868778142651563
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.30475262568132133,
+        -0.2869225211553728
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.2858881969826373,
+        -0.26863461250923504
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_z_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.28586659997116226,
+        -0.2686487337106245
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_T4_full",
+      "b": "encodec_q2_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.00014202975984911815,
+        0.006865216404611185
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_T4_dedup",
+      "b": "encodec_q2_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.0001605319998524181,
+        0.0068965559339993245
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_G_dedup",
+      "b": "encodec_q2_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -3.801071254791941e-05,
+        2.6319707966293567e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_T4_dedup",
+      "b": "encodec_q2_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.1582691499310849e-05,
+        6.907350070551173e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.32765009127558037,
+        -0.30922367264417405
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3276564279220525,
+        -0.3092497631880613
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.30995984600710275,
+        -0.29187609073973086
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q2_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.3099235864801249,
+        -0.29185693067353835
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_full",
+      "b": "encodec_q4_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.0008890948179726514,
+        0.008290454168580251
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_dedup",
+      "b": "encodec_q4_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        0.0009064304418521678,
+        0.00829559305875288
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_G_dedup",
+      "b": "encodec_q4_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.1533298054623025e-05,
+        5.796428451452499e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_dedup",
+      "b": "encodec_q4_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.7741122136291642e-05,
+        8.553075084190981e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.31937599416735274,
+        -0.3005923945258301
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.31937312286246616,
+        -0.30059474763094407
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.30036468539311867,
+        -0.2823549505140603
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        -0.30032991998308123,
+        -0.2823428660007032
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_T4_full",
+      "b": "beats_G_full",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        -0.013286288110169589,
+        -0.006986202186368736
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_T4_dedup",
+      "b": "beats_G_dedup",
+      "contrast": "T4-G",
+      "paired_percentile_95": [
+        -0.013321436151508576,
+        -0.007014603042827674
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_G_dedup",
+      "b": "beats_G_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -1.5801521329528168e-05,
+        6.355320382974982e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_T4_dedup",
+      "b": "beats_T4_full",
+      "contrast": "dedup-full",
+      "paired_percentile_95": [
+        -4.159643635772425e-05,
+        2.7018244629048417e-05
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_G_full",
+      "b": "cnn6_G_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        0.15030342089958573,
+        0.16491923492920532
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_G_dedup",
+      "b": "cnn6_G_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        0.15029057326280068,
+        0.16491551775337332
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_T4_full",
+      "b": "cnn6_T4_full",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        0.15457782882463422,
+        0.16910015979220674
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "beats_T4_dedup",
+      "b": "cnn6_T4_dedup",
+      "contrast": "representation-CNN6",
+      "paired_percentile_95": [
+        0.15455861125954576,
+        0.16906381707492207
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_G_full",
+      "b": "e1_q2_G_full",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.006843406549791529,
+        0.010357402273556558
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_G_dedup",
+      "b": "e1_q2_G_dedup",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.006836596471514395,
+        0.010353454725460424
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_full",
+      "b": "e1_q2_T4_full",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.007866346249728404,
+        0.011566823682611131
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "e1_q4_T4_dedup",
+      "b": "e1_q2_T4_dedup",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.007874807065744671,
+        0.011581440471545886
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_G_full",
+      "b": "encodec_q2_G_full",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.006218169622071942,
+        0.010891083567119658
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_G_dedup",
+      "b": "encodec_q2_G_dedup",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.006249022288024615,
+        0.010905089379016273
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_full",
+      "b": "encodec_q2_T4_full",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.007247223195448323,
+        0.011757621930249722
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    },
+    {
+      "a": "encodec_q4_T4_dedup",
+      "b": "encodec_q2_T4_dedup",
+      "contrast": "q4-q2",
+      "paired_percentile_95": [
+        0.007271979718598712,
+        0.011748299172769991
+      ],
+      "defined_draws": 2000,
+      "undefined_draws": 0
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+"""Batch17 isolated CPU runtime; no imports from legacy runtime modules."""
+import os,sys
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent;PROJECT=ROOT.parents[2];OLD=ROOT.parent/'full_scale_readout_01'
+EXT=PROJECT/'36_IDENTIFIABLE_PRESSURE_REPAIR/external';CORE=EXT/'r9_core_01';DEPS=EXT/'r9_baseline_deps';BEATS=EXT/'r9_beats_01'
+REPO=PROJECT/'09_LOCAL_RESTORE/work/Audio-Representation-Probe'
+CKPT=PROJECT/'09_LOCAL_RESTORE/historical-runs/ARP-runs/ARP-20260904-P1-EVENT-RECON-TRADEOFF-E0-E1-E2-r1/checkpoints/E1/checkpoint_epoch20.pt'
+sys.dont_write_bytecode=True;sys.path[:0]=[str(DEPS/'site-packages'),str(DEPS/'panns'),str(BEATS/'source'),str(REPO)]
+for k in ('OMP_NUM_THREADS','MKL_NUM_THREADS','OPENBLAS_NUM_THREADS','NUMEXPR_NUM_THREADS','NUMBA_NUM_THREADS'):os.environ[k]='2'
+os.environ.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HOME=str(ROOT/'tmp/hf'),NUMBA_CACHE_DIR=str(ROOT/'tmp/numba'),MPLCONFIGDIR=str(ROOT/'tmp/mpl'),MPLBACKEND='Agg')
+import json,hashlib,time,threading,shutil
+from datetime import datetime,timezone
+import numpy as np,psutil
+START=time.monotonic();PEAK=0;STOP=threading.Event();SAMPLER=None;LIMIT=7200;LAST_DISK_CHECK=0.;ROOT_BYTES=0
+def read(p):return json.loads(Path(p).read_text(encoding='utf-8-sig'))
+def utc():return datetime.now(timezone.utc).isoformat()
+def sha(p):
+    with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+def write(p,x):
+    p=Path(p);p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix(p.suffix+'.tmp');tmp.write_text(json.dumps(x,indent=2,ensure_ascii=False,allow_nan=False),encoding='utf-8');os.replace(tmp,p)
+def frozen(p,x):
+    if Path(p).exists():assert read(p)==x,'FROZEN_IDENTITY_CHANGED:'+str(p)
+    else:write(p,x)
+def npz(p,**kw):
+    p=Path(p);p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix('.npz.tmp')
+    with tmp.open('wb') as f:np.savez_compressed(f,**kw)
+    os.replace(tmp,p)
+def load(p):
+    with np.load(p) as d:return {k:d[k] for k in d.files}
+def resource():
+    global PEAK
+    p=psutil.Process();m=p.memory_info();PEAK=max(PEAK,m.rss,getattr(m,'peak_wset',0))
+    return dict(observed_at=utc(),pid=p.pid,birth=p.create_time(),rss=m.rss,peak_working_set=PEAK,system_available=psutil.virtual_memory().available,D_free=shutil.disk_usage('D:/').free,writer=os.environ.get('ARP_WRITER','/root/full_scale_science'),stage=os.environ.get('ARP_ACTIVE_STAGE','17core'))
+BASE=sum(json.loads(l)['wall_s'] for l in (ROOT/'sessions.jsonl').read_text(encoding='utf-8-sig').splitlines()) if (ROOT/'sessions.jsonl').exists() else 0
+def status(phase,**kw):
+    global LAST_DISK_CHECK,ROOT_BYTES
+    if time.monotonic()-LAST_DISK_CHECK>60:
+        ROOT_BYTES=sum(p.stat().st_size for p in ROOT.rglob('*') if p.is_file());LAST_DISK_CHECK=time.monotonic()
+    r=dict(**resource(),phase=phase,wall_s=BASE+time.monotonic()-START,root_bytes_last_sample=ROOT_BYTES,**kw);write(ROOT/'STATUS.json',r);print(json.dumps(r),flush=True)
+    p=PROJECT/'36_IDENTIFIABLE_PRESSURE_REPAIR/MASTER_LOOP_STATE.json';s=read(p);s.update(observed_at=r['observed_at'],dispatch_state=phase,writer_owner=r['writer'],heavy_process_owner={'pid':r['pid'],'birth':r['birth'],'stage':r['stage']},runtime_status_source='workflow_r9/full_fsd_readout_01/STATUS.json')
+    for a in s.get('active_native_agents',[]):
+        if a['task']==r['writer']:a['status']=phase
+    note='Core/pilot only; full execution awaits fresh acceptance.' if r['stage'].startswith('17core') else 'Actual authorized stage: '+r['stage']+'. See stage grant and saved phase; stage execution is not scientific acceptance.'
+    write(p,s);(ROOT.parent/'STATUS.md').write_text('# Batch17 '+r['stage']+' actual runtime\n\n'+json.dumps(r,indent=2)+'\n\n'+note+'\n',encoding='utf-8')
+    if r['wall_s']>LIMIT:raise RuntimeError('AUTHORIZED_WALL_BOUNDARY')
+    if r['rss']>1610612736 or r['system_available']<1073741824 or r['D_free']<8_000_000_000 or ROOT_BYTES>8_000_000_000:raise RuntimeError('RESOURCE_SAVE_BOUNDARY')
+    return r
+def start():
+    global SAMPLER
+    assert psutil.virtual_memory().available>=1610612736
+    def sample():
+        with (ROOT/'resources.jsonl').open('a',encoding='utf-8') as f:
+            while not STOP.is_set():f.write(json.dumps(resource())+'\n');f.flush();STOP.wait(2)
+    SAMPLER=threading.Thread(target=sample,daemon=True);SAMPLER.start()
+def finish(ok,phase):
+    STOP.set()
+    if SAMPLER:SAMPLER.join(4)
+    with (ROOT/'sessions.jsonl').open('a',encoding='utf-8') as f:f.write(json.dumps(dict(**resource(),wall_s=time.time()-psutil.Process().create_time(),success=ok,phase=phase,accounting='actual base Python process birth through final receipt'))+'\n')
+def model_hash(m):
+    h=hashlib.sha256()
+    for k,v in sorted(m.state_dict().items()):h.update(k.encode());h.update(v.cpu().numpy().tobytes())
+    return h.hexdigest()

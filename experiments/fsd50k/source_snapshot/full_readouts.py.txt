@@ -1,0 +1,91 @@
+"""Gated train/validation ridge. No eval rows are scored here."""
+from common import *
+from statistics_core import *
+from stage_gate import gate,indexes,complete,verify_completed,verify_hash_once,execution_identity
+import argparse,traceback,gc
+REP_MODEL={**{r:'arp' for r in ('logmel','e1_z','e1_q2','e1_q4')},'cnn6':'cnn6',**{r:'encodec' for r in ('encodec_z','encodec_q2','encodec_q4')},'beats':'beats'}
+
+def cache(rep,pool,variant='main'):
+    directory=ROOT/('features' if variant=='main' else 'context30_features')/REP_MODEL[rep];m=read(directory/'COMPLETE.json');key=rep+'_'+pool
+    assert m['rows']==51197 and m['identity']['protocol_lock_sha256']==sha(ROOT/'PROTOCOL_LOCK.json') and m['identity']['execution_lock_sha256']==execution_identity()
+    protocol=read(ROOT/'PROTOCOL.json');assert m['identity']['manifest_sha256']==protocol['manifest_sha256'] and m['identity']['model']==REP_MODEL[rep] and m['identity']['variant']==variant and m['identity']['model_state_hash']==protocol['native_state_hashes'][REP_MODEL[rep]]
+    path=directory/(key+'.npy');digest=m['features'][key]['sha256'];verify_hash_once(path,digest)
+    array=np.load(path,mmap_mode='r');assert list(array.shape)==m['features'][key]['shape'] and array.shape==(51197,protocol['dimensions'][key]) and array.dtype==np.float32
+    return array,digest
+
+def cleanup_completed_factor(directory):
+    """A completed condition may reclaim only its own leftover factor, never another condition's."""
+    factor=ROOT/'tmp/active_factor.npz';meta=factor.with_suffix('.json');identity=sha(Path(directory)/'IDENTITY.json')
+    if not factor.exists():
+        if meta.exists() and read(meta).get('identity_sha256')==identity:meta.unlink()
+        return False
+    with np.load(factor) as data:owned=str(data['identity_sha256'])==identity
+    if not owned:return False
+    if meta.exists():
+        info=read(meta);assert info['identity_sha256']==identity;verify_hash_once(factor,info['sha256'])
+    assert factor.resolve().is_relative_to((ROOT/'tmp').resolve())
+    factor.unlink()
+    if meta.exists():meta.unlink()
+    return True
+
+def completed_branch(directory,identity):
+    if not verify_completed(directory,identity):return False
+    cleanup_completed_factor(directory);return True
+
+def main(rep,pool,arm,variant='main'):
+    gate('readouts' if variant=='main' else 'context_readouts');start();status('FULL_READOUT_START',rep=rep,pool=pool,arm=arm,variant=variant)
+    rows,ix=indexes();x,feature_sha=cache(rep,pool,variant);y=np.load(ROOT/'labels.npy',mmap_mode='r');train=ix['train']
+    if arm=='dedup':train=np.array([i for i in train if rows[i]['dedup_train_keep']])
+    assert len(train)==(36796 if arm=='full' else 36794)
+    identity=dict(rep=rep,pool=pool,arm=arm,variant=variant,train_ids=[rows[i]['id'] for i in train],feature_sha256=feature_sha,protocol_lock_sha256=sha(ROOT/'PROTOCOL_LOCK.json'),execution_lock_sha256=execution_identity())
+    directory=ROOT/('readouts' if variant=='main' else 'context30_readouts')/(rep+'_'+pool+'_'+arm);directory.mkdir(parents=True,exist_ok=True);frozen(directory/'IDENTITY.json',identity)
+    if completed_branch(directory,identity):return
+    # Incomplete selection is reconstructed from all persisted validation artifacts without fitting again.
+    for j,lam in enumerate(LAMBDAS):
+        path=directory/f'lambda_{j}.npz';meta=path.with_suffix('.json')
+        if path.exists() and not meta.exists():
+            a=load(path);assert str(a['identity_sha256'])==sha(directory/'IDENTITY.json') and float(a['lambda_'])==lam and np.array_equal(a['val_indices'],ix['val'])
+            metric=MultilabelAP(y[ix['val']],a['val_scores']).report(a['val_scores']);assert metric['macro_200_ap'] is not None
+            write(meta,dict(lambda_=float(lam),alpha=float(a['alpha']),metric=metric,arrays_sha256=sha(path),identity_sha256=sha(directory/'IDENTITY.json'),recovered_from_saved_complete_arrays=True))
+    existing=[(directory/f'lambda_{j}.npz').exists() and (directory/f'lambda_{j}.json').exists() for j in range(5)]
+    f=None
+    factor=ROOT/'tmp/active_factor.npz';factor_meta=factor.with_suffix('.json');factor_id=sha(directory/'IDENTITY.json')
+    if not all(existing):
+        if factor.exists():
+            f=load(factor);assert str(f.pop('identity_sha256'))==factor_id,'Resume previously active condition first';f['n']=int(f['n'])
+            if factor_meta.exists():assert read(factor_meta)['sha256']==sha(factor)
+            else:write(factor_meta,dict(identity_sha256=factor_id,sha256=sha(factor),recovered=True))
+        else:
+            s=Statistics(x.shape[1]);t=time.monotonic()
+            for j in range(0,len(train),128):
+                ii=train[j:j+128];s.add(x[ii],y[ii])
+                if j%4096==0:
+                    x._mmap.close();x,_=cache(rep,pool,variant);status('FULL_TRAIN_STATISTICS',rep=rep,pool=pool,arm=arm,rows=min(j+128,len(train)))
+            x._mmap.close();x,_=cache(rep,pool,variant)
+            f=s.factors();factor.parent.mkdir(parents=True,exist_ok=True);tmp=factor.with_suffix('.npz.tmp')
+            with tmp.open('wb') as out:np.savez(out,identity_sha256=factor_id,**f)
+            os.replace(tmp,factor);write(factor_meta,dict(identity_sha256=factor_id,sha256=sha(factor)))
+            write(directory/'FACTORIZATION.json',dict(n=len(train),dimension=x.shape[1],elapsed_s=time.monotonic()-t,resource=resource(),train_only=True))
+    reports=[]
+    for j,lam in enumerate(LAMBDAS):
+        path=directory/f'lambda_{j}.npz';meta=path.with_suffix('.json')
+        if existing[j]:
+            report=read(meta);assert report['identity_sha256']==sha(directory/'IDENTITY.json') and report['arrays_sha256']==sha(path);reports.append(report);continue
+        w=coefficient(f,lam);scores=np.empty((len(ix['val']),200),np.float64)
+        for k in range(0,len(scores),128):scores[k:k+128]=predict(x[ix['val'][k:k+128]],f,w)
+        metric=MultilabelAP(y[ix['val']],scores).report(scores);assert metric['macro_200_ap'] is not None
+        npz(path,identity_sha256=sha(directory/'IDENTITY.json'),coefficients=w,mean=f['mean'],std=f['std'],target_mean=f['target_mean'],val_scores=scores,val_indices=ix['val'],lambda_=lam,alpha=len(train)*lam)
+        report=dict(lambda_=float(lam),alpha=float(len(train)*lam),metric=metric,arrays_sha256=sha(path),identity_sha256=sha(directory/'IDENTITY.json'))
+        write(meta,report);reports.append(report);status('FULL_VALIDATION_LAMBDA_SAVED',rep=rep,pool=pool,arm=arm,lambda_=float(lam))
+    selected=max(range(5),key=lambda j:(reports[j]['metric']['macro_200_ap'],LAMBDAS[j]))
+    selection=dict(index=selected,lambda_=float(LAMBDAS[selected]),selection_metric='validation 200-class macroAP; exact ties larger lambda',val_refit=False,all_validation_artifacts_complete=True)
+    frozen(directory/'SELECTION.json',selection)
+    complete(directory,identity,['IDENTITY.json','SELECTION.json']+[f'lambda_{j}.{ext}' for j in range(5) for ext in ('npz','json')])
+    cleanup_completed_factor(directory)
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--rep',choices=tuple(REP_MODEL),required=True);p.add_argument('--pool',choices=('G','T4'),required=True);p.add_argument('--arm',choices=('full','dedup'),required=True);p.add_argument('--variant',choices=('main','context30'),default='main');a=p.parse_args();ok=False
+    try:main(a.rep,a.pool,a.arm,a.variant);ok=True
+    except Exception:write(ROOT/f'READOUT_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,('readouts:' if a.variant=='main' else 'context_readouts:')+a.rep+'_'+a.pool+'_'+a.arm)
+    sys.exit(0 if ok else 1)

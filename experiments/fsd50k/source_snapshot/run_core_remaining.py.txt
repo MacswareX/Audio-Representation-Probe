@@ -1,0 +1,10 @@
+"""Sequential core-only child processes. No full-stage grant or heldout scoring."""
+import subprocess,sys,json,time
+from pathlib import Path
+r=Path(__file__).resolve().parent
+commands=[['core_pilot.py','--model','arp']]+[['context_pilot.py','--model',m] for m in ('arp','cnn6','encodec','beats')]+[['core_checks.py'],['core_checks.py','--large']]
+for args in commands:
+    p=subprocess.Popen([sys.executable,'-B',str(r/args[0]),*args[1:]])
+    print(json.dumps(dict(supervisor='core sequential only',child_pid=p.pid,command=args,at=time.time())),flush=True)
+    code=p.wait()
+    if code:sys.exit(code)

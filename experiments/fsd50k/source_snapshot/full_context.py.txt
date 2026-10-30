@@ -1,0 +1,27 @@
+"""Isolated whole-native train-panel retry, also the fixed cloud/local control entry."""
+from common import *
+from time_coverage import *
+import argparse,traceback
+
+def main(model,id_):
+    start();status('CORE_ISOLATED_WHOLE_CONTEXT_START',model=model,id=id_)
+    from native import MODELS
+    assert id_ in read(ROOT/'CONTEXT_PANEL.json')['ids'];row=next(r for r in read(ROOT/'PILOT_PANEL.json')['rows'] if r['id']==id_);assert row['official_split']=='train'
+    adapter=MODELS[model]();res=resource();tokens=max(1,int((row['duration_seconds']-.025)/.01+1)//16)*8
+    additional=6*12*tokens*tokens*4+200_000_000 if model=='beats' else (450_000_000 if model=='encodec' else 250_000_000)
+    assert res['system_available']-additional>=1073741824 and res['rss']+additional<=1610612736,'Insufficient native whole-context forecast reserve; use approved higher-memory host/stage, no window substitution.'
+    x=read_resample(row,adapter.sample_rate);t=time.monotonic();values,geometry=adapter.extract(x);duration=row['duration_seconds'];reset=load(ROOT/'pilot'/model/(id_+'.npz'));arrays={};diff={}
+    for rep,(v,anchors) in values.items():
+        pool=ClipPool(v.shape[0],duration);pool.add(v,anchors*duration/(len(x)/adapter.sample_rate),0,duration);g,t4,_=pool.result()
+        for kind,vec in [('G',g),('T4',t4)]:
+            key=rep+'_'+kind;before=reset[key].astype(float);after=vec.astype(float);arrays[key]=vec;diff[key]=dict(max_abs=float(abs(before-after).max()),relative_l2=float(np.linalg.norm(before-after)/max(np.linalg.norm(before),1e-12)))
+    directory=ROOT/'context_isolated'/model;npz(directory/(id_+'.npz'),**arrays)
+    assert model_hash(adapter.model)==adapter.before
+    write(directory/(id_+'.json'),dict(id=id_,duration=duration,whole_s=time.monotonic()-t,status='WHOLE_NATIVE_COMPLETE_ISOLATED',geometry=geometry,comparison=diff,initial_deferred_receipt_sha256=sha(ROOT/'context'/model/(id_+'.json')),model_unchanged=True,resource=resource()))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--model',choices=('arp','cnn6','encodec','beats'),required=True);p.add_argument('--id',required=True);a=p.parse_args();ok=False
+    try:main(a.model,a.id);ok=True
+    except Exception:write(ROOT/f'ISOLATED_CONTEXT_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,'context_isolated:'+a.model+':'+a.id)
+    sys.exit(0 if ok else 1)

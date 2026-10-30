@@ -1,0 +1,56 @@
+"""Train-only full-source pilot. Does not fit or score heldout labels."""
+from common import *
+from time_coverage import *
+import argparse,traceback
+def panel():
+    rows=[]
+    with (OLD/'fsd_index.jsonl').open(encoding='utf-8') as f:
+        for l in f:
+            r=json.loads(l)
+            if r['official_split']=='train':rows.append(r)
+    rows.sort(key=lambda r:(r['duration_seconds'],int(r['id'])))
+    picks=[rows[0],rows[-1]]
+    for value in (.5,1.,2.5,4.99,5.,5.01,10.,29.9,31.):picks.append(min(rows,key=lambda r:(abs(r['duration_seconds']-value),int(r['id']))))
+    picks.append(next(r for r in rows if r['duration_seconds']>30.1))
+    selected={r['id']:r for r in picks};out=sorted(selected.values(),key=lambda r:(r['duration_seconds'],int(r['id'])))
+    frozen(ROOT/'PILOT_PANEL.json',dict(selection='train-only deterministic duration anchors, min and max; no label/score selection',rows=out,source_sha256=sha(OLD/'fsd_index.jsonl')))
+    return out
+def main(model):
+    start();status('CORE_NATIVE_PILOT_START',model=model);write(ROOT/'COVERAGE_FIXTURES.json',fixtures())
+    rows=panel()
+    from native import MODELS
+    adapter=MODELS[model]();bindings={str(ROOT/p):sha(ROOT/p) for p in ('common.py','time_coverage.py','native.py','core_pilot.py')}
+    bind=ROOT/f'{model}_PILOT_SOURCE_BINDING.json'
+    if not bind.exists():write(bind,dict(bound_at=utc(),sources=bindings,model_before=adapter.before))
+    else:write(ROOT/f'{model}_PILOT_RESUME_BINDING.json',dict(bound_at=utc(),sources=bindings,model_before=adapter.before,original_binding=sha(bind),repair='INTEGER_RESAMPLE_REPAIR_02.json'))
+    records=[]
+    for row in rows:
+        saved=ROOT/'pilot'/model/(row['id']+'.json');array=saved.with_suffix('.npz')
+        if saved.exists() and array.exists():
+            r=read(saved);a=load(array);assert str(a['id'])==row['id'] and r['id']==row['id'] and r['duration']==row['duration_seconds']
+            records.append(r);continue
+        t0=time.monotonic();x=read_resample(row,adapter.sample_rate);original=boundaries(row['frames'],row['sample_rate']);mapped=mapped_boundaries(original,row['sample_rate'],adapter.sample_rate,len(x));duration=row['frames']/row['sample_rate']
+        pools={};geometry=[]
+        for j,(a,b) in enumerate(zip(mapped[:-1],mapped[1:])):
+            start_s=original[j]/row['sample_rate'];span=(original[j+1]-original[j])/row['sample_rate'];values,geo=adapter.extract(x[a:b],check=j==0)
+            for rep,(v,anchors) in values.items():
+                # Native resampled clock differs by <1 target sample; map anchors into exact original interval.
+                adjusted=anchors*(span/((b-a)/adapter.sample_rate));assert (adjusted<=span+1e-9).all()
+                if rep not in pools:pools[rep]=ClipPool(v.shape[0],duration)
+                pools[rep].add(v,adjusted,start_s,span)
+            geometry.append(dict(window=j,original_samples=[int(original[j]),int(original[j+1])],resampled_samples=[int(a),int(b)],original_time=[start_s,start_s+span],geometry=geo))
+        arrays={};receipts={}
+        for rep,pool in pools.items():g,t4,rec=pool.result();arrays[rep+'_G']=g;arrays[rep+'_T4']=t4;receipts[rep]=rec
+        npz(ROOT/'pilot'/model/(row['id']+'.npz'),id=row['id'],**arrays)
+        record=dict(id=row['id'],duration=duration,windows=len(mapped)-1,elapsed_s=time.monotonic()-t0,geometry=geometry,pooling=receipts)
+        write(ROOT/'pilot'/model/(row['id']+'.json'),record);records.append(record);del x
+        status('CORE_NATIVE_SOURCE_COMPLETE',model=model,id=row['id'],duration=duration,windows=len(mapped)-1)
+    after=model_hash(adapter.model);assert after==adapter.before
+    write(ROOT/f'{model}_NATIVE_PILOT_RECEIPT.json',dict(rows=len(rows),model_before=adapter.before,model_after=after,records=[{k:r[k] for k in ('id','duration','windows','elapsed_s')} for r in records],native_dynamic_shapes_pass=True,all_original_audio_covered=True,phase='CORE_ONLY_NO_HELDOUT_SCORE'))
+    status('CORE_NATIVE_MODEL_COMPLETE',model=model)
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--model',choices=('arp','cnn6','encodec','beats'),required=True);args=p.parse_args();ok=False
+    try:main(args.model);ok=True
+    except Exception:write(ROOT/f'FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,'native_pilot_'+args.model)
+    sys.exit(0 if ok else 1)

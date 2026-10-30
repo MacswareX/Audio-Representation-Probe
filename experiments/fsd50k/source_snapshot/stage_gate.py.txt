@@ -1,0 +1,78 @@
+"""Full stages cannot execute from the core authorization alone."""
+from common import *
+import common
+OVERRIDE_FILES={'common.py','stage_gate.py','full_features.py','full_readouts.py','full_evaluation.py'}
+_VERIFIED={}
+
+def verify_hash_once(path,expected):
+    """Immutable stage inputs: hash once per process, rehash on stat identity change."""
+    p=Path(path).resolve();s=p.stat();signature=(str(p),s.st_size,s.st_mtime_ns,s.st_ctime_ns,s.st_ino,expected)
+    if _VERIFIED.get(str(p))!=signature:
+        assert sha(p)==expected,'ARTIFACT_HASH_MISMATCH:'+str(p)
+        _VERIFIED[str(p)]=signature
+    return expected
+
+def packet_file(packet,name):
+    item=packet['files'][name];verify_hash_once(ROOT/name,item['sha256']);return read(ROOT/name)
+
+def validate_chain(a):
+    """Root grant anchors accepted original packet AND accepted narrow repair packet."""
+    verify_hash_once(ROOT/'CORE_PACKET.json',a['core_packet_sha256']);packet=read(ROOT/'CORE_PACKET.json')
+    original_lock=packet_file(packet,'PROTOCOL_LOCK.json');protocol=packet_file(packet,'PROTOCOL.json')
+    assert original_lock['protocol_sha256']==packet['files']['PROTOCOL.json']['sha256']==packet['protocol_sha256']
+    assert packet['protocol_lock_sha256']==packet['files']['PROTOCOL_LOCK.json']['sha256']
+    repair_path=ROOT/'repair_01/REPAIR_PACKET.json';assert a['repair_verdict']=='ACCEPT'
+    verify_hash_once(repair_path,a['repair_packet_sha256']);repair=read(repair_path)
+    assert repair['original_packet_sha256']==a['core_packet_sha256']
+    override_path=ROOT/'repair_01/SOURCE_OVERRIDES.json';verify_hash_once(override_path,repair['source_override_manifest_sha256']);overrides=read(override_path)
+    assert overrides['original_packet_sha256']==a['core_packet_sha256'] and set(overrides['overrides'])==OVERRIDE_FILES
+    assert overrides['original_lock_sha256']==packet['files']['PROTOCOL_LOCK.json']['sha256']
+    execution_path=ROOT/'repair_01/EXECUTION_LOCK.json';verify_hash_once(execution_path,repair['execution_lock_sha256']);execution=read(execution_path)
+    assert execution['source_override_manifest_sha256']==repair['source_override_manifest_sha256'] and execution['original_packet_sha256']==a['core_packet_sha256']
+    assert execution['original_lock_sha256']==packet['files']['PROTOCOL_LOCK.json']['sha256'] and execution['protocol_sha256']==packet['files']['PROTOCOL.json']['sha256']
+    assert set(execution['source_sha256'])==set(original_lock['source_sha256'])
+    for name,digest in original_lock['source_sha256'].items():
+        expected=digest
+        if name in overrides['overrides']:
+            change=overrides['overrides'][name];assert change['before_sha256']==digest==packet['files'][name]['sha256'];expected=change['after_sha256']
+        assert execution['source_sha256'][name]==expected;verify_hash_once(ROOT/name,expected)
+    for name in ('manifest.jsonl','labels.npy','eval_groups.npy','EXPOSURE.json'):
+        verify_hash_once(ROOT/name,packet['files'][name]['sha256'])
+    assert protocol['manifest_sha256']==original_lock['manifest_sha256']==packet['files']['manifest.jsonl']['sha256']
+    assert protocol['labels_sha256']==original_lock['labels_sha256']==packet['files']['labels.npy']['sha256']
+    bindings=packet_file(packet,'SOURCE_BINDINGS.json');assert bindings['external_sha256']==protocol['external_sha256']
+    for path,digest in protocol['external_sha256'].items():verify_hash_once(path,digest)
+    # Core pilot rows reused later must remain members of the accepted original packet.
+    for name,item in packet['files'].items():
+        if name.startswith('pilot/') or name.endswith('_NATIVE_PILOT_RECEIPT.json'):verify_hash_once(ROOT/name,item['sha256'])
+    return packet,execution
+
+def execution_identity():return sha(ROOT/'repair_01/EXECUTION_LOCK.json')
+
+def gate(stage):
+    path=ROOT/'STAGE_GRANT.json'
+    assert path.exists(),'Full stage requires master grant after fresh core acceptance'
+    a=read(path);assert a['fresh_core_verdict']=='ACCEPT'
+    assert stage in a['stages'] and a['stages'][stage]['authorized'] is True
+    validate_chain(a)
+    configured=os.environ.get('ARP_ACTIVE_STAGE');assert configured is None or configured==stage,'Explicit runtime stage disagrees with authorized entry'
+    os.environ['ARP_ACTIVE_STAGE']=stage
+    common.LIMIT=float(a['stages'][stage]['cumulative_owned_process_seconds'])
+    common.BASE=sum(json.loads(l)['wall_s'] for l in (ROOT/'sessions.jsonl').read_text().splitlines() if json.loads(l)['phase'].startswith(stage+':'))
+    common.START=time.monotonic();return a
+
+def indexes():
+    rows=[json.loads(l) for l in (ROOT/'manifest.jsonl').open(encoding='utf-8')]
+    return rows,{s:np.array([r['index'] for r in rows if r['official_split']==s],dtype=np.int64) for s in ('train','val','eval')}
+
+def verify_completed(directory,expected):
+    marker=Path(directory)/'COMPLETE.json'
+    if not marker.exists():return False
+    m=read(marker);assert m['identity']==expected
+    for name,digest in m['files'].items():
+        if not (Path(directory)/name).exists():return False
+        assert sha(Path(directory)/name)==digest
+    return True
+
+def complete(directory,identity,files):
+    directory=Path(directory);write(directory/'COMPLETE.json',dict(identity=identity,files={f:sha(directory/f) for f in files},at=utc()))
