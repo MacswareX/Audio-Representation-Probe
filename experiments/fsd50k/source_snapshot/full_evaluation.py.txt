@@ -1,0 +1,76 @@
+"""Selected models once; persisted-score metrics and paired conditional bootstrap."""
+from common import *
+from statistics_core import *
+from stage_gate import gate,indexes,complete,verify_completed,verify_hash_once,execution_identity
+from full_readouts import REP_MODEL,cache
+import argparse,traceback
+CONDITIONS=[r+'_'+p+'_'+a for r in REP_MODEL for p in ('G','T4') for a in ('full','dedup')]
+
+def selected_artifact(directory):
+    d=Path(directory);m=read(d/'COMPLETE.json');identity=read(d/'IDENTITY.json')
+    assert m['identity']==identity and identity['protocol_lock_sha256']==sha(ROOT/'PROTOCOL_LOCK.json') and identity['execution_lock_sha256']==execution_identity()
+    verify_hash_once(d/'IDENTITY.json',m['files']['IDENTITY.json']);verify_hash_once(d/'SELECTION.json',m['files']['SELECTION.json']);selection=read(d/'SELECTION.json')
+    j=selection['index'];assert isinstance(j,int) and 0<=j<5 and selection['lambda_']==float(LAMBDAS[j])
+    name=f'lambda_{j}.npz';meta=f'lambda_{j}.json';verify_hash_once(d/name,m['files'][name]);verify_hash_once(d/meta,m['files'][meta]);report=read(d/meta)
+    assert report['arrays_sha256']==m['files'][name] and report['identity_sha256']==m['files']['IDENTITY.json'] and report['lambda_']==selection['lambda_']
+    return d/name,m['files'][name]
+
+def selection_lock():
+    items={}
+    for c in CONDITIONS:
+        d=ROOT/'readouts'/c;m=read(d/'COMPLETE.json');assert m['identity']['protocol_lock_sha256']==sha(ROOT/'PROTOCOL_LOCK.json') and m['identity']['execution_lock_sha256']==execution_identity()
+        assert sha(d/'SELECTION.json')==m['files']['SELECTION.json'];items[c]=dict(completion_sha256=sha(d/'COMPLETE.json'),selection_sha256=sha(d/'SELECTION.json'))
+    frozen(ROOT/'ALL_SELECTIONS_LOCK.json',dict(conditions=items,protocol_lock_sha256=sha(ROOT/'PROTOCOL_LOCK.json'),execution_lock_sha256=execution_identity()))
+
+def evaluate(condition):
+    gate('evaluation');start();selection_lock();status('SELECTED_EVAL_START',condition=condition)
+    rep,pool,arm=condition.rsplit('_',2);d=ROOT/'readouts'/condition;model_path,model_sha=selected_artifact(d);rows,ix=indexes();y=np.load(ROOT/'labels.npy',mmap_mode='r')
+    directory=ROOT/'evaluation'/condition;directory.mkdir(parents=True,exist_ok=True);identity=dict(selected_model_sha256=model_sha,all_selections_lock_sha256=sha(ROOT/'ALL_SELECTIONS_LOCK.json'),condition=condition)
+    if verify_completed(directory,identity):return
+    raw=directory/'scores.npz'
+    if raw.exists():
+        saved=load(raw);assert str(saved['identity'])==json.dumps(identity,sort_keys=True) and np.array_equal(saved['indices'],ix['eval']);scores=saved['scores']
+    else:
+        model=load(model_path);x,_=cache(rep,pool);scores=np.empty((len(ix['eval']),200),np.float64)
+        for j in range(0,len(scores),128):scores[j:j+128]=predict(x[ix['eval'][j:j+128]],model,model['coefficients'])
+        npz(raw,scores=scores,indices=ix['eval'],identity=json.dumps(identity,sort_keys=True))
+    truth=y[ix['eval']];metric=MultilabelAP(truth,scores).report(scores);unexposed=np.array([not(rows[i]['e1_train_source'] or rows[i]['e1_val_source']) for i in ix['eval']])
+    secondary=MultilabelAP(truth[unexposed],scores[unexposed]).report(scores[unexposed])
+    write(directory/'METRICS.json',dict(official_full=metric,e1_source_unexposed_secondary=secondary,secondary_kept=int(unexposed.sum()),secondary_excluded=int((~unexposed).sum()),interpretation='Known E1 train/validation-source exclusion, not proof of no unknown pretraining exposure.'))
+    complete(directory,identity,['scores.npz','METRICS.json'])
+
+def uncertainty(condition):
+    gate('uncertainty');start();status('CONDITIONAL_GROUP_BOOTSTRAP_START',condition=condition)
+    rows,ix=indexes();y=np.load(ROOT/'labels.npy',mmap_mode='r')[ix['eval']];groups=np.load(ROOT/'eval_groups.npy');directory=ROOT/'evaluation'/condition;marker=read(directory/'COMPLETE.json');raw=directory/'scores.npz';assert sha(raw)==marker['files']['scores.npz']
+    target=directory/'bootstrap.npz';identity=dict(score_sha256=sha(raw),groups_sha256=sha(ROOT/'eval_groups.npy'),draws=2000,seed=17170911)
+    if target.exists():assert str(load(target)['identity'])==json.dumps(identity,sort_keys=True);return
+    scores=load(raw)['scores'];t=time.monotonic();v,missing=bootstrap(y,{condition:scores},groups,2000,17170911)
+    npz(target,macro_ap=v[condition],missing_classes=missing,identity=json.dumps(identity,sort_keys=True));write(directory/'BOOTSTRAP.json',dict(identity=identity,elapsed_s=time.monotonic()-t,undefined_draws=int((missing>0).sum()),groups=int(groups.max()+1),fixed_orders=True,refits=0))
+
+def contrasts():
+    gate('uncertainty');vectors={c:load(ROOT/'evaluation'/c/'bootstrap.npz')['macro_ap'] for c in CONDITIONS};pairs=[]
+    for rep in REP_MODEL:
+        for arm in ('full','dedup'):pairs.append((rep+'_T4_'+arm,rep+'_G_'+arm,'T4-G'))
+        for pool in ('G','T4'):pairs.append((rep+'_'+pool+'_dedup',rep+'_'+pool+'_full','dedup-full'))
+        if rep!='cnn6':
+            for pool in ('G','T4'):
+                for arm in ('full','dedup'):pairs.append((rep+'_'+pool+'_'+arm,'cnn6_'+pool+'_'+arm,'representation-CNN6'))
+    for family in ('e1','encodec'):
+        for pool in ('G','T4'):
+            for arm in ('full','dedup'):pairs.append((family+'_q4_'+pool+'_'+arm,family+'_q2_'+pool+'_'+arm,'q4-q2'))
+    out=[]
+    for a,b,label in pairs:
+        delta=vectors[a]-vectors[b];keep=np.isfinite(delta);ci=np.quantile(delta[keep],[.025,.975]).tolist() if keep.any() else None
+        out.append(dict(a=a,b=b,contrast=label,paired_percentile_95=ci,defined_draws=int(keep.sum()),undefined_draws=int((~keep).sum())))
+    write(ROOT/'PAIRED_CONTRASTS.json',dict(draws=2000,seed=17170911,conditional_on_saved_models=True,multiplicity='descriptive pointwise intervals, no familywise significance claim',contrasts=out))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--phase',choices=('evaluate','bootstrap','contrasts'),required=True);p.add_argument('--condition',choices=CONDITIONS);a=p.parse_args();ok=False
+    try:
+        if a.phase=='evaluate':evaluate(a.condition)
+        elif a.phase=='bootstrap':uncertainty(a.condition)
+        else:contrasts()
+        ok=True
+    except Exception:write(ROOT/f'EVALUATION_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,('evaluation:' if a.phase=='evaluate' else 'uncertainty:')+str(a.condition))
+    sys.exit(0 if ok else 1)

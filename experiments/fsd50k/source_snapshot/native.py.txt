@@ -1,0 +1,85 @@
+"""Dynamic native geometry. All tensors returned channel x true native time."""
+from common import *
+import torch,torch.nn.functional as F
+torch.set_num_threads(2);torch.set_num_interop_threads(1);torch.use_deterministic_algorithms(True)
+class ARP:
+    sample_rate=16000;reps=('logmel','e1_z','e1_q2','e1_q4')
+    def __init__(self):
+        from src.vqvae import MelRVQVAE
+        from src.features import LogMel
+        p=torch.load(CKPT,map_location='cpu',weights_only=False)['payload'];self.model=MelRVQVAE(64,64,4,256)
+        self.model.load_state_dict({k[5:]:v for k,v in p['model_state_dict'].items() if k.startswith('base.')},strict=True);self.model.eval().requires_grad_(False);self.front=LogMel();self.before=model_hash(self.model)
+    @torch.inference_mode()
+    def extract(self,x,check=False):
+        d=len(x)/self.sample_rate;m=self.front.wave_to_logmel(x,self.sample_rate)/80.;t=m.shape[1];padded=max(256,((t+255)//256)*256)
+        z=self.model.encoder(F.pad(m,(0,padded-t))[None,None]);*_,diag=self.model.rvq(z,return_diagnostics=True)
+        ma=np.arange(t)*.02;validm=np.arange(t)<t;za=np.arange(z.shape[-1])*.08;validz=np.arange(z.shape[-1])*4<t
+        values={'logmel':(m[:,validm].numpy(),ma[validm]),'e1_z':(z[0,:,validz].numpy(),za[validz]),'e1_q2':(diag['straight_through_prefix_quantized'][1][0,:,validz].numpy(),za[validz]),'e1_q4':(diag['straight_through_prefix_quantized'][3][0,:,validz].numpy(),za[validz])}
+        return values,dict(input_samples=len(x),duration=d,mel_frames=t,padded_mel_frames=padded,valid_mel=int(validm.sum()),valid_latent=int(validz.sum()),frontend_scale='/80',right_padding_excluded=True)
+class CNN6:
+    sample_rate=32000;reps=('cnn6',)
+    def __init__(self):
+        from models import Cnn6
+        self.model=Cnn6(32000,1024,320,64,50,14000,527);p=torch.load(CORE/'downloads/Cnn6_mAP=0.343.pth',map_location='cpu',weights_only=True)
+        self.model.load_state_dict(p['model'],strict=True);self.model.eval().requires_grad_(False);self.before=model_hash(self.model)
+    @torch.inference_mode()
+    def extract(self,x,check=False):
+        cap={};shapes=[];handles=[]
+        for k in range(1,5):
+            def hook(m,args,out,k=k):
+                assert out.shape[2]==args[0].shape[2]//2;shapes.append(list(out.shape))
+                if k==4:cap['time']=out.mean(3)[0]
+            handles.append(getattr(self.model,f'conv_block{k}').register_forward_hook(hook))
+        try:out=self.model(x[None])
+        finally:
+            for h in handles:h.remove()
+        t=(len(x)//320+1)//16;assert cap['time'].shape==(512,t);anchors=.075+np.arange(t)*.16;valid=anchors<len(x)/32000;assert valid.any()
+        if check:
+            native=self.model(x[None]);assert all(torch.equal(out[k],native[k]) for k in out)
+        return {'cnn6':(cap['time'][:,valid].numpy(),anchors[valid])},dict(input_samples=len(x),native_shapes=shapes,valid_frames=int(valid.sum()),anchors='0.075+0.16j',native_hook_equal=bool(check),extra_audio_padding=0)
+class EnCodec:
+    sample_rate=24000;reps=('encodec_z','encodec_q2','encodec_q4')
+    def __init__(self):
+        from transformers import EncodecModel
+        from safetensors.torch import load_file
+        self.model,info=EncodecModel.from_pretrained(str(CORE/'downloads'),local_files_only=True,use_safetensors=True,output_loading_info=True)
+        assert not any(info.get(k) for k in ('missing_keys','unexpected_keys','mismatched_keys','error_msgs'))
+        self.model.load_state_dict(load_file(str(CORE/'downloads/model.safetensors')),strict=True);self.model.eval().requires_grad_(False);self.before=model_hash(self.model)
+    @torch.inference_mode()
+    def extract(self,x,check=False):
+        capture={}
+        def hook(m,args,out):capture['z']=out.detach()
+        h=self.model.encoder.register_forward_hook(hook)
+        try:e=self.model.encode(x[None,None],padding_mask=torch.ones_like(x[None,None],dtype=torch.bool),bandwidth=3.,return_dict=True)
+        finally:h.remove()
+        t=(len(x)+319)//320;codes=e.audio_codes;z=capture['z'];assert codes.shape==(1,1,4,t) and z.shape==(1,128,t)
+        cb=codes[0].transpose(0,1);values={'encodec_z':(z[0].numpy(),np.arange(t)*320/24000)};accum=torch.zeros_like(z);errors=[]
+        for k in range(4):
+            accum=accum+F.embedding(cb[k],self.model.quantizer.layers[k].codebook.embed).permute(0,2,1)
+            if k in (1,3):
+                q=self.model.quantizer.decode(cb[:k+1]);error=float(abs(q-accum).max());assert torch.allclose(q,accum,atol=1e-6,rtol=1e-5);errors.append(error)
+                values['encodec_q'+str(k+1)]=(q[0].numpy(),np.arange(t)*320/24000)
+        if check:
+            q15=self.model.encode(x[None,None],padding_mask=torch.ones_like(x[None,None],dtype=torch.bool),bandwidth=1.5,return_dict=True)
+            assert torch.equal(q15.audio_codes,codes[:,:,:2])
+        return values,dict(input_samples=len(x),native_frames=t,active_quantizers=4,total_quantizers=32,prefix_lookup_max_abs=errors,native15_equal=bool(check),context='native state reset for every call',extra_audio_padding=0)
+class Beats:
+    sample_rate=16000;reps=('beats',)
+    def __init__(self):
+        from BEATs import BEATs,BEATsConfig
+        p=torch.load(BEATS/'BEATs_iter3_plus_AS2M.pt',map_location='cpu',weights_only=True,mmap=True);self.model=BEATs(BEATsConfig(p['cfg']));self.model.load_state_dict(p['model'],strict=True);assert self.model.predictor is None
+        self.model.eval().requires_grad_(False);self.before=model_hash(self.model);self.patch=self.model.input_patch_size;assert self.patch==16
+        del p
+    @torch.inference_mode()
+    def extract(self,x,check=False):
+        cap={}
+        def hook(m,args,out):cap['shape']=tuple(out.shape)
+        h=self.model.patch_embedding.register_forward_hook(hook)
+        try:features,mask=self.model.extract_features(x[None],padding_mask=torch.zeros_like(x[None],dtype=torch.bool))
+        finally:h.remove()
+        b,c,t,f=cap['shape'];assert f==8 and features.shape==(1,t*f,768) and mask is not None and not bool(mask.any())
+        temporal=features[0].reshape(t,f,768).mean(1).T;anchors=.0875+np.arange(t)*.16;valid=anchors<len(x)/16000;assert valid.all()
+        if check:
+            native,mask2=self.model.extract_features(x[None],padding_mask=torch.zeros_like(x[None],dtype=torch.bool));assert torch.equal(features,native) and torch.equal(mask,mask2)
+        return {'beats':(temporal.numpy(),anchors)},dict(input_samples=len(x),patch_shape=list(cap['shape']),token_shape=list(features.shape),time_frames=t,frequency_patches=f,feature_dim=768,anchor_origin=.0875,time_stride=.16,native_hook_equal=bool(check),extra_audio_padding=0,attention_context='reset per call')
+MODELS={'arp':ARP,'cnn6':CNN6,'encodec':EnCodec,'beats':Beats}

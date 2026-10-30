@@ -6,3 +6,6 @@
 evidence/fsd50k/metrics/* -text
 evidence/fsd50k/paired_contrasts.json -text
 evidence/fsd50k/results_reported.csv -text
+evidence/fsd50k/validation/** -text
+evidence/fsd50k/results.csv -text
+experiments/fsd50k/source_snapshot/** -text

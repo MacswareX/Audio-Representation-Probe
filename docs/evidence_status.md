@@ -1,4 +1,4 @@
-# Evidence status: October 30 renovation draft
+# Evidence status: October 30 source integration
 
 Public base: `4d47b78608b0a95d1f92e6b0c5b2c5abe6c554c1`.
 The original ESC-50 execution code is unchanged.
@@ -8,48 +8,56 @@ The original ESC-50 execution code is unchanged.
 - `evidence/fsd50k/historical_review.md`: unchanged September 13 completion
   review from the September 14 contact archive. Earlier numerical checks are
   reported there; they are not repeated by this renovation.
-- `results_reported.csv`: 36 six-decimal values transcribed from that review,
-  not extracted from 36 original prediction matrices.
-- `metrics/`: METRICS, SELECTION and BOOTSTRAP JSONs for four conditions:
-  E1/EnCodec q2/q4, G/full. Other conditions are summary-only here.
+- `results.csv`: full-precision AP and selected lambda from all 36 original
+  metric/selection records. `results_reported.csv` retains the earlier rounded
+  review table, separately labeled.
+- `metrics/`: original METRICS, SELECTION and BOOTSTRAP JSONs for all 36 conditions.
+- `validation/`: all 180 original candidate-validation JSON records.
 - `paired_contrasts.json`: 76 archived paired-interval summaries.
 - `protocol_extract.json`: curated extract omitting absolute dependency paths
   and obsolete phase fields; source hash preserved. This is not the original lock.
 - `manifest.json`: archive identity and hashes of transferred/derived files.
+- `source_lineage.json`: original/repaired lock lineage and 17 byte-preserved
+  source snapshots. See [implementation](fsd50k_implementation.md).
 
-The source archive's 45 manifest entries were checked with no hash mismatch.
-Only relevant non-contact excerpts were selected. No private correspondence,
-raw audio, TUT annotations or local account paths were copied into this draft.
+The earlier contact archive's 45 entries and the engineering handoff's 1,445
+entries were checked with no hash mismatch. Relevant non-contact records were
+selected. No private correspondence, raw audio, TUT annotations or private
+absolute account paths were copied into this repository.
 
 ## Checks and limits
 
 `python scripts/check_fsd_evidence.py` uses the standard library to check hashes,
-condition coverage, four 200-class means/support totals, rounded-table
-consistency, selections and interval metadata. It cannot recompute AP from
+condition coverage, all 36 200-class means/support totals, both result tables,
+all 180 validation selections, 17 source snapshots and interval metadata. It cannot recompute AP from
 labels/scores, generate bootstrap draws, fit heads, extract features, retrain
 E1, validate native full-context equivalence or establish personal ability.
 
-## Needed originals
+## What is now available and what still requires binary assets
 
-The historical source index points to a Windows project containing
-`36_IDENTIFIABLE_PRESSURE_REPAIR/workflow_r9/full_fsd_readout_01`.
-Its current contents must be checked on that machine.
+Original text source, protocol/repair locks and result records have been
+transferred from the Windows work area. Five source changes versus the first
+protocol lock are fully accounted for by the later repaired execution lock.
+Current source bytes must not be called the initial protocol-locked versions.
 
 | Purpose | Original material | Availability here |
 |---|---|---|
-| Import execution code | `full_features.py`, `full_readouts.py`, imports, exact dependencies/models | Missing |
-| Resolve run identity | `execution_04/MAIN_PACKET.json`, completion/terminal receipts, recovery/version records | Historical hashes only |
-| Verify all conditions | All 36 METRICS/SELECTION records, candidate validation artifacts, RESULT_TABLE | Four conditions plus rounded review table |
-| Recompute predictions/AP | Recording/class order, labels, selected predictions, normalization/head arrays | Missing |
-| Recompute intervals | Uploader/content groups and draws or exact resampling implementation | Summaries only |
-| Check feature path | Native adapters, checkpoint identities, source manifests and authorized inputs | Not executed here |
+| Read execution code | Original feature/readout/evaluation drivers, imports and source locks | Available; selected snapshots preserved; portable numerical adaptation tested |
+| Resolve run identity | MAIN_PACKET, terminal receipt, review and repair records | Text bytes verified; public lineage preserves hashes |
+| Verify saved results | All 36 metrics/selections, 180 validation candidates, original RESULT_TABLE | Available and checked for consistency, not re-scored |
+| Recompute predictions/AP | Features, selected-model arrays and scores | Not transferred |
+| Recompute intervals | Uploader/content groups and saved prediction/draw arrays | Groups reconstructed privately with matching hash; scores/draws not transferred |
+| Check feature path | Native adapters, checkpoints and authorized audio | Source available; checkpoints/audio not transferred; no native forward run |
 
-First transfer source and compact metadata; transfer heavy arrays separately
-for a named verification. A partial handoff must not be labeled complete
-reproduction. Supplying existing files requires no new training.
+The private manifest reconstructed the 200-column labels and evaluation groups
+with hashes matching the historical bindings. That verifies label/group
+construction from supplied metadata, not model predictions. Transfer heavy
+arrays only for a named verification; this source release is not a complete
+waveform-to-result reproduction package.
 
 ## Publication status
 
-This local review candidate awaits the original-source handoff requested by
-the author. It has not been pushed/merged and is not a complete FSD release.
-Resolve source gaps and inspect the final diff before publishing.
+The original-source handoff is resolved. This update can be reviewed as a branch
+and pull request; publication or merging does not establish fresh experimental
+results. Source-derived numerical code and saved experimental records remain
+separately labeled.

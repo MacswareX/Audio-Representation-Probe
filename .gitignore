@@ -3,6 +3,8 @@ data/
 *.zip
 *.wav
 *.flac
+*.npy
+runs/
 
 # Results: keep compact real JSON/PNG artifacts, ignore heavy features and
 # development-only synthetic/legacy figures.

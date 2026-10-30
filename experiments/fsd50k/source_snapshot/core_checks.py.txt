@@ -1,0 +1,46 @@
+"""Train-only / synthetic checks; no heldout scores. Run --large separately from torch."""
+from common import *
+from statistics_core import *
+import argparse,traceback
+
+def numeric():
+    from sklearn.metrics import average_precision_score
+    rng=np.random.default_rng(1701);x=rng.normal(size=(173,23));x[:,0]=7.;x[:,1]=x[:,2];y=(rng.random((173,7))<.3).astype(float)
+    s=Statistics(23,7)
+    for a in range(0,len(x),19):s.add(x[a:a+19],y[a:a+19])
+    direct=(x-x.mean(0)).T@(x-x.mean(0));tri=np.tril_indices(23);err=float(abs(s.xx[tri]-direct[tri]).max());assert err<1e-10
+    s.remove(x[2],y[2]);s.remove(x[91],y[91]);keep=np.ones(len(x),bool);keep[[2,91]]=False
+    t=Statistics(23,7);t.add(x[keep],y[keep]);assert np.allclose(s.xx[tri],t.xx[tri],atol=1e-10) and np.allclose(s.xy,t.xy,atol=1e-10) and np.allclose(s.mx,t.mx,atol=1e-12)
+    f=s.factors();xx=(x[keep]-f['mean'])/f['std'];yy=y[keep]-f['target_mean'];errors=[]
+    for lam in LAMBDAS:
+        w=coefficient(f,lam);a=f['n']*lam;reference=np.linalg.solve(xx.T@xx+a*np.eye(23),xx.T@yy)
+        dual=xx.T@np.linalg.solve(xx@xx.T+a*np.eye(len(xx)),yy)
+        kkt=np.linalg.norm(xx.T@(xx@w-yy)+a*w)/max(1.,np.linalg.norm(xx.T@yy));assert np.allclose(w,reference,atol=1e-9) and np.allclose(w,dual,atol=1e-9) and kkt<1e-9
+        errors.append(dict(lambda_=float(lam),kkt=kkt,coefficient_max_error=float(abs(w-reference).max())))
+    # Perturb heldout X/Y without refitting; normalizer cannot change because API only saw training arrays.
+    before=f['mean'].copy();predict(rng.normal(size=(11,23))*100,f,w);assert np.array_equal(before,f['mean'])
+    fixtures=[]
+    for truth,score in [([0,1,0,1],[0,1,2,3]),([0,1,0,1],[1,1,1,1]),([0,1,1,0],[1,1,0,0]),([1,0,1,0],[3,2,1,0])]:
+        truth=np.array(truth);score=np.array(score);weights=np.array([2.,1.,3.,2.]);ours=APOrder(truth,score)
+        for weights0 in (None,weights):assert abs(ours.value(weights0)-average_precision_score(truth,score,sample_weight=weights0))<1e-12
+        fixtures.append(dict(labels=truth.tolist(),scores=score.tolist(),ap=ours.value()))
+    assert np.isnan(APOrder(np.zeros(4),np.arange(4)).value()) and np.isnan(APOrder(np.ones(4),np.arange(4)).value())
+    # 100 draws at official eval shape with synthetic scores/labels, no eval predictions or labels consumed.
+    yy=(rng.random((10231,200))<.03).astype(np.uint8);score=rng.normal(size=yy.shape).astype(np.float32);groups=np.arange(len(yy))%2297
+    start_b=time.monotonic();values,missing=bootstrap(yy,{'synthetic':score},groups,draws=100)
+    write(ROOT/'NUMERICAL_CHECKS.json',dict(streamed_covariance_max_error=err,dedup_downdate_direct_equal=True,train_only_normalization=True,ridge=errors,ap_sklearn_equal=True,ap_fixtures=fixtures,undefined_no_positive_or_no_negative=True,bootstrap_100_draws_s=time.monotonic()-start_b,bootstrap_missing_class_draws=int((missing>0).sum()),bootstrap_data='synthetic 10231 x 200, 2297 groups',resource=resource()))
+
+def large():
+    # Full D=6144 allocation and LAPACK eigensolve; synthetic low rank is explicitly a cost fixture, not fit quality.
+    rng=np.random.default_rng(1702);s=Statistics(6144);t=time.monotonic()
+    for j in range(4):s.add(rng.normal(size=(64,6144)),(rng.random((64,200))<.1).astype(float))
+    gram_s=time.monotonic()-t;status('CORE_LARGE_GRAM_FACTORIZATION',dimension=6144);t=time.monotonic();f=s.factors();eigh_s=time.monotonic()-t
+    t=time.monotonic();w=coefficient(f,.01);assert w.shape==(6144,200) and np.isfinite(w).all()
+    write(ROOT/'LARGE_GRAM_CHECK.json',dict(dimension=6144,synthetic_rows=256,gram_build_s=gram_s,eigh_s=eigh_s,coefficient_s=time.monotonic()-t,finite=True,resource=resource(),memory_interpretation='Actual full dimension factorization; rank256 synthetic fixture. Full train Gram accumulation cost must scale by rows; eigensolver runtime can differ with spectrum.'))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--large',action='store_true');args=p.parse_args();ok=False
+    try:start();status('CORE_NUMERICAL_CHECK_START',large=args.large);large() if args.large else numeric();ok=True
+    except Exception:write(ROOT/f'CHECK_FAILURE_{int(time.time())}.json',dict(error=traceback.format_exc(),resource=resource()));print(traceback.format_exc(),flush=True)
+    finally:finish(ok,'large_gram' if args.large else 'numerical_checks')
+    sys.exit(0 if ok else 1)

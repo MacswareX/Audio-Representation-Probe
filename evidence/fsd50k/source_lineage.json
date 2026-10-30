@@ -1,0 +1,139 @@
+{
+  "handoff_archive": "ARP_Engineering_Source_Handoff_20261030.zip",
+  "handoff_archive_sha256": "a2077f903cc410f931f649880d3819480db260e109d74ce1e94f2215b34a3835",
+  "original_protocol_lock_sha256": "d60213ca00c65ba5dce3de166ca62c551fe9d70bc3d1850bf126cb6cef109846",
+  "repaired_execution_lock_sha256": "ddcf67af6cccd1133531f9f0aa7986fb9669951782e7af5911687b052e54ce04",
+  "main_packet_sha256": "08e927124469e1682c34f8f44ae067508ce3d9942a35093013419bfde893d1ad",
+  "review_sha256": "ae6af46559b5ae6b2900552e2403517bc5541b0b12c9bc1368ebf5398e0b0df1",
+  "overrides": {
+    "common.py": {
+      "before_sha256": "0339af6fc41212801ec6277d6d6e598cb2c474b232aca7f1136a81a24c4ba596",
+      "after_sha256": "16eee2f4527a09eb5faede105955b656a86ee137227f9adeaf37debb300647b3",
+      "reason": "Explicit ARP_WRITER/ARP_ACTIVE_STAGE runtime identity and honest stage panel; independent existing sampler retains real identity."
+    },
+    "full_evaluation.py": {
+      "before_sha256": "84b085f9dfb1f096792029b938a42a392554277a532be99cca4fbc22a5fea03c",
+      "after_sha256": "6946005571c72d84eaf9c9a1f53787f6c09655a148e8a527ce552d19f51b71cb",
+      "reason": "Selected model and metadata verified against committed readout before load; execution identity."
+    },
+    "full_features.py": {
+      "before_sha256": "eb7a59e5db15f212f895cd1f8c9711f9e65e5910356cdc53da29743ee8a02534",
+      "after_sha256": "ab9cd26684e3df72d7209c4d9ba7b25d60c89cbcb1e9064b74e469e6c6dd1ff3",
+      "reason": "Bind outputs to accepted repaired execution lock; pilot accepted hashes checked by gate."
+    },
+    "full_readouts.py": {
+      "before_sha256": "30567163fb1fbca2b019d18d0355f0e97a8c039363b14532a169d109a7d31e8b",
+      "after_sha256": "e9727243cffd28464e0da8f15b9ddd88c0e4ca411259a26af7fb988b774bf2da",
+      "reason": "Actual feature array hash/shape identity before use, execution identity, completed matching-factor cleanup only."
+    },
+    "stage_gate.py": {
+      "before_sha256": "7be3623444cff5178f9aeda5d5eea8241d7784234f71f39e4fc03f8573e33421",
+      "after_sha256": "9ed7eacdf78d01efd03a78bcf4e079bac82e8c8cd08fc69b0d6cc74889e5f508",
+      "reason": "Anchor immutable original packet/lock/protocol/data/external/pilot and accepted narrow repair; process-local actual-file hash cache."
+    }
+  },
+  "snapshot_files": [
+    {
+      "path": "experiments/fsd50k/source_snapshot/build_protocol.py.txt",
+      "source_member": "fsd/build_protocol.py",
+      "sha256": "8ce88bee69949c589df7973044b16f4215ca80f596f09abb408fda7f16f453af",
+      "bytes": 10117
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/common.py.txt",
+      "source_member": "fsd/common.py",
+      "sha256": "16eee2f4527a09eb5faede105955b656a86ee137227f9adeaf37debb300647b3",
+      "bytes": 4845
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/context_pilot.py.txt",
+      "source_member": "fsd/context_pilot.py",
+      "sha256": "7e1010aae2da0906a0b1eef65c1377267536b749346c1061638711b70c636c9c",
+      "bytes": 3621
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/core_checks.py.txt",
+      "source_member": "fsd/core_checks.py",
+      "sha256": "99a77aeddceeb92be1a3276ac73f25a9c7876b942a9e29294235ca0840bc3a49",
+      "bytes": 4379
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/core_pilot.py.txt",
+      "source_member": "fsd/core_pilot.py",
+      "sha256": "3d34279a197f19edb639919b56974b8eb96d58203148562211b72a108b811b91",
+      "bytes": 4455
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/full_context.py.txt",
+      "source_member": "fsd/full_context.py",
+      "sha256": "6301565bcddd1ae61863361743005719f35a917454beae00bff007e383b468a4",
+      "bytes": 2475
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/full_evaluation.py.txt",
+      "source_member": "fsd/full_evaluation.py",
+      "sha256": "6946005571c72d84eaf9c9a1f53787f6c09655a148e8a527ce552d19f51b71cb",
+      "bytes": 6551
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/full_features.py.txt",
+      "source_member": "fsd/full_features.py",
+      "sha256": "ab9cd26684e3df72d7209c4d9ba7b25d60c89cbcb1e9064b74e469e6c6dd1ff3",
+      "bytes": 6340
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/full_readouts.py.txt",
+      "source_member": "fsd/full_readouts.py",
+      "sha256": "e9727243cffd28464e0da8f15b9ddd88c0e4ca411259a26af7fb988b774bf2da",
+      "bytes": 7700
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/manifest.py.txt",
+      "source_member": "fsd/manifest.py",
+      "sha256": "a40fee4a6d9d774748c55a1d0ea31576e776ad8fdc0b4d83a82fb3d3eeadac4c",
+      "bytes": 4684
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/native.py.txt",
+      "source_member": "fsd/native.py",
+      "sha256": "549b98dfb0713271957be89feb0a63b56a41f865a08556203b6c2593b3d44416",
+      "bytes": 6765
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/recovery_check.py.txt",
+      "source_member": "fsd/recovery_check.py",
+      "sha256": "17c6599039bbf9603ce65f5953bc4c342d3c9b132229b6b3691488577db1fa16",
+      "bytes": 2210
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/resample_check.py.txt",
+      "source_member": "fsd/resample_check.py",
+      "sha256": "5b0774b642af114e38fd8e343a51be6cddacec75dc1bd43fd2729dd4e543cc51",
+      "bytes": 1429
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/run_core_remaining.py.txt",
+      "source_member": "fsd/run_core_remaining.py",
+      "sha256": "89285a531bcc65c09e3885690465c146db70a4cbeb446d71dc49823854f73938",
+      "bytes": 603
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/stage_gate.py.txt",
+      "source_member": "fsd/stage_gate.py",
+      "sha256": "9ed7eacdf78d01efd03a78bcf4e079bac82e8c8cd08fc69b0d6cc74889e5f508",
+      "bytes": 5308
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/statistics_core.py.txt",
+      "source_member": "fsd/statistics_core.py",
+      "sha256": "f9f6df652f761a059cf8e9390c34dbe10525fac666c41298dff3fcbf9f853477",
+      "bytes": 5280
+    },
+    {
+      "path": "experiments/fsd50k/source_snapshot/time_coverage.py.txt",
+      "source_member": "fsd/time_coverage.py",
+      "sha256": "780498a278b5e6195d91020fbd6154776d1f0720a930ecb39ddee8fd58d454d1",
+      "bytes": 4290
+    }
+  ]
+}

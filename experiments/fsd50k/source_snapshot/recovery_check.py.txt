@@ -1,0 +1,21 @@
+"""Real readout orchestration on synthetic full-sized labels; inject missing metadata/selection."""
+from common import *
+import full_readouts as runner
+import tempfile
+start();status('CORE_SYNTHETIC_RECOVERY_CHECK')
+directory=ROOT/'tmp/recovery_fixture';directory.mkdir(parents=True,exist_ok=True);rng=np.random.default_rng(171703);n=51197
+rows=[dict(index=i,id='synthetic_'+str(i),dedup_train_keep=i not in (1,2)) for i in range(n)]
+ix={'train':np.arange(36796),'val':np.arange(36796,40966),'eval':np.arange(40966,n)}
+y=(rng.random((n,200))<.05).astype(np.uint8);np.save(directory/'labels.npy',y);x=rng.normal(size=(n,8)).astype(np.float32)
+write(directory/'PROTOCOL_LOCK.json',dict(synthetic_only=True));runner.ROOT=directory;runner.gate=lambda stage:None;runner.start=lambda:None;runner.status=lambda *a,**kw:None;runner.indexes=lambda:(rows,ix);runner.cache=lambda rep,pool:(x,'synthetic-cache-fixed')
+# The real loop calls close/remap: use an actual memmap, then retain its normal API.
+np.save(directory/'x.npy',x);runner.cache=lambda rep,pool,variant='main':(np.load(directory/'x.npy',mmap_mode='r'),'synthetic-cache-fixed')
+runner.main('logmel','G','full');out=directory/'readouts/logmel_G_full';before={p.name:sha(p) for p in out.glob('lambda_*.npz')};control=sha(out/'FACTORIZATION.json')
+for name in ('SELECTION.json','COMPLETE.json','lambda_3.json'):
+    path=(out/name).resolve();assert path.is_relative_to((ROOT/'tmp').resolve());path.unlink()
+# A factorization during resume would be an error: all arrays already committed.
+runner.Statistics=lambda *a,**kw:(_ for _ in ()).throw(AssertionError('REPEATED_SUCCESSFUL_FIT'))
+runner.main('logmel','G','full');after={p.name:sha(p) for p in out.glob('lambda_*.npz')}
+assert before==after and control==sha(out/'FACTORIZATION.json') and read(out/'SELECTION.json')['all_validation_artifacts_complete']
+write(ROOT/'RECOVERY_CHECK.json',dict(synthetic_shape=[51197,200],native_readout_orchestration=True,missing_selection_rebuilt=True,missing_lambda_metadata_rebuilt=True,fit_called_on_resume=False,all_five_array_hashes_unchanged=before==after,control_unchanged=True,eval_scores_computed=False,resource=resource()))
+finish(True,'synthetic_recovery_check')

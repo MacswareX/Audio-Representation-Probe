@@ -62,7 +62,9 @@ $$\min_{W,b}\frac{1}{N}\|XW+\mathbf{1}b^T-Y\|_F^2+\lambda\|W\|_F^2.$$
 W has shape d by 200; the 200-entry intercept b is not penalized. With centered
 X and Y, the normal equations use `X.T @ X + N * lambda * I`.
 The recorded implementation streams float64 sufficient statistics and uses an
-eigendecomposition. Its source is still missing here. This is not Adam or
+eigendecomposition. Its source-derived portable implementation is now in
+`src/fsd50k/statistics.py`; the byte-preserved original is separately recorded.
+This is not Adam or
 binary-cross-entropy training.
 
 Lambda candidates are 0.0001, 0.001, 0.01, 0.1 and 1.0. Validation 200-class

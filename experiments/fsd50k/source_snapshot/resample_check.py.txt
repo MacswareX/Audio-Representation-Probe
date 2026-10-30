@@ -1,0 +1,15 @@
+"""Verify local integer-length correction against installed native convolution."""
+from common import *
+from time_coverage import *
+import torch,torchaudio
+torch.set_num_threads(2);torch.set_num_interop_threads(1)
+start();status('CORE_RESAMPLE_CHECK');results=[]
+for row in read(ROOT/'PILOT_PANEL.json')['rows']:
+    with wave.open(row['raw_path'],'rb') as f:x=torch.from_numpy(np.frombuffer(f.readframes(f.getnframes()),dtype='<i2').astype(np.float32)/32768.)
+    for sr in (16000,24000,32000):
+        a=torchaudio.functional.resample(x,44100,sr);b=exact_resample(x,44100,sr);n=min(len(a),len(b))
+        assert torch.equal(a[:n],b[:n]);assert len(b)==(len(x)*sr+44099)//44100
+        results.append(dict(id=row['id'],target_sr=sr,native_samples=len(a),integer_samples=len(b),common_prefix_bitwise_equal=True))
+    del x,a,b
+write(ROOT/'INTEGER_RESAMPLE_REPAIR_02.json',dict(reason='Installed torchaudio target_length casts rational duration to default float32 before ceil; long recordings can lose/overrun one sample.',change='Same installed sinc kernel, padding, convolution and reshape; use integer ceil solely for final slice.',preserved_sources='archive/pre_integer_resample',checks=results,prior_successful_pilot_reuse='All previous saved sources had asserted exact integer length; same convolution prefix bitwise verified. Failed EnCodec largest source only resumes.',resource=resource()))
+finish(True,'resample_check')

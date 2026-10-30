@@ -8,7 +8,7 @@ not one model's continuous performance-improvement curve.
 | August ESC-50 exploration | Six groups; statistics versus code histograms | Public code, archived metrics/figures | Original code retained; [historical overview](esc50_exploratory.md) |
 | September ESC-50 repair | Provenance, out-of-fold probabilities, source-aware comparison | Exported patches, evaluator modules, log-mel cache and predictions | Located privately; not automatically applied |
 | September E1 intervention | Matched-opportunity NONE/EARLY/ALL and fresh heads | Report and bounded negative/inconclusive results | Separate training branch; complete source/weights needed |
-| September FSD50K main | Nine representations, G/T4, full/dedup, 200 labels | Completion review, four detailed conditions, 76 intervals | Evidence excerpts in draft; original execution code absent |
+| September FSD50K main | Nine representations, G/T4, full/dedup, 200 labels | Original text source, 36 detailed conditions, 180 validation candidates, 76 intervals | Verified snapshots and portable readout integrated; binary feature/score arrays absent |
 | September TUT diagnostics | CRNN/R12, boundary auxiliary, separate BEATs comparison | Saved-prediction replay pack, partial model code and summaries | Separate detection lineage; no TUT annotations copied |
 | October Physical Audio S1 | Digital rotation/history fixture | October 23 retrospective | Separate learning fixture, not ARP/robotics integration |
 
@@ -55,6 +55,7 @@ review/feedback route.
 
 For this renovation: explain and expose FSD without inventing a replacement
 baseline, industrial adoption of E1, or automatic context30/C1-C5 obligations.
-Missing files are a transfer problem, not a reason to rerun accepted science.
+The source-transfer gap is resolved; missing binary assets are not a reason to
+rerun accepted science merely to improve the narrative.
 AI-assisted explanations and reviews do not establish personal coding ownership;
 that develops by operating and modifying the same pipeline.

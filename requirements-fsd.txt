@@ -1,0 +1,5 @@
+# Portable numerical core and its tests; no Torch/audio dependencies.
+# Versions exercised on Python 3.12.14 during the October 30 integration.
+numpy==2.3.5
+scipy==1.17.0
+scikit-learn==1.8.0

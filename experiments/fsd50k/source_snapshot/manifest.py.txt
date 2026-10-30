@@ -1,0 +1,39 @@
+"""One streaming official identity/exposure/coverage index; no score computation."""
+from common import *
+from time_coverage import boundaries,mapped_boundaries
+from statistics_core import group_components
+import wave
+
+def main():
+    start();status('CORE_MANIFEST_START');esc=read(OLD/'esc_manifest.json')['rows'];source={}
+    for r in esc:source.setdefault(str(r['src_file']),[]).append(dict(filename=r['filename'],fold=r['fold'],target=r['target']))
+    rows=[];counts={};hours={};windows={};duplicates={};links=[];sha_input=sha(OLD/'fsd_index.jsonl')
+    target=ROOT/'manifest.jsonl';tmp=target.with_suffix('.jsonl.tmp')
+    with (OLD/'fsd_index.jsonl').open(encoding='utf-8') as f,tmp.open('w',encoding='utf-8') as out:
+        for line in f:
+            r=json.loads(line);i=len(rows);assert Path(r['raw_path']).stat().st_size==r['bytes']
+            with wave.open(r['raw_path'],'rb') as w:assert w.getnframes()==r['frames'] and w.getframerate()==r['sample_rate'] and w.getnchannels()==1 and w.getsampwidth()==2
+            b=boundaries(r['frames'],r['sample_rate']);r['index']=i;r['original_boundaries']=b.tolist();r['resampled']={}
+            for sr in (16000,24000,32000):
+                n=(r['frames']*sr+r['sample_rate']-1)//r['sample_rate'];m=mapped_boundaries(b,r['sample_rate'],sr,n);r['resampled'][str(sr)]=dict(frames=n,boundaries=m.tolist())
+                # Native CNN6 and BEATs minimal valid geometry; no silent short-clip exclusion.
+                for size in np.diff(m):
+                    if sr==32000:assert (size//320+1)//16>=1
+                    if sr==16000:assert ((size-400)//160+1)//16>=1
+            exposure=source.get(str(r['id']),[]);r['esc_source_matches']=exposure;r['e1_train_source']=any(q['fold'] in (2,3,4) for q in exposure);r['e1_val_source']=any(q['fold']==5 for q in exposure)
+            r['dedup_train_keep']=not(r['official_split']=='train' and r['id'] in ('124855','51749'))
+            r['hash_provenance']='Inherited accepted full_scale_readout_01 raw SHA; batch17 verifies all headers and file sizes, not redundant 35GB rehash.'
+            if exposure:links.append(dict(id=r['id'],official_split=r['official_split'],e1_train_source=r['e1_train_source'],e1_val_source=r['e1_val_source'],esc=exposure))
+            split=r['official_split'];counts[split]=counts.get(split,0)+1;hours[split]=hours.get(split,0)+r['duration_seconds']/3600;windows[split]=windows.get(split,0)+len(b)-1
+            duplicates.setdefault(r['content_hash_group'],[]).append(dict(id=r['id'],split=split))
+            out.write(json.dumps(r,separators=(',',':'))+'\n');rows.append(r)
+    assert counts=={'train':36796,'val':4170,'eval':10231} and len({r['id'] for r in rows})==51197
+    os.replace(tmp,target);y=np.zeros((51197,200),np.uint8)
+    for r in rows:y[r['index'],r['label_indices']]=1
+    np.save(ROOT/'labels.npy',y,allow_pickle=False);np.save(ROOT/'eval_groups.npy',group_components([r for r in rows if r['official_split']=='eval']),allow_pickle=False)
+    cross=[dict(sha=k,rows=v) for k,v in duplicates.items() if len({q['split'] for q in v})>1]
+    assert sorted(q['id'] for c in cross for q in c['rows'] if q['split']=='train')==['124855','51749']
+    write(ROOT/'EXPOSURE.json',dict(esc_fsd_mapping=links,matching_source_count=len(links),matching_esc_clips=sum(len(q['esc']) for q in links),cross_split_exact_duplicates=cross,interpretation=['Same Freesound source does not imply exact audio bytes or a log proving checkpoint sampling.','EnCodec paper Appendix A.1: FSD development audio used for training; FSD eval divided into validation/test. Of 577 overlapping sources,425 are dev and152 eval.','E1 actual pretraining ESC folds2/3/4, validation5: secondary evaluation excludes corresponding source IDs, retaining official main.','CNN6/BEATs AudioSet pretraining; exact local per-ID sampling logs unavailable. ESC and FSD source overlap means these are not independent replications.'],primary_encodec_source='https://arxiv.org/pdf/2210.13438#page=16'))
+    write(ROOT/'MANIFEST_RECEIPT.json',dict(counts=counts,hours=hours,windows=windows,classes=200,label_support={s:y[[r['index'] for r in rows if r['official_split']==s]].sum(0).tolist() for s in counts},inherited_source_sha=sha_input,manifest_sha=sha(target),labels_sha=sha(ROOT/'labels.npy'),all_raw_headers_sizes_verified=True,longer_than_30_1=[dict(id=r['id'],duration=r['duration_seconds']) for r in rows if r['duration_seconds']>30.1],exact_duplicate_groups=sum(len(v)>1 for v in duplicates.values()),eval_group_count=int(np.load(ROOT/'eval_groups.npy').max()+1)))
+    status('CORE_MANIFEST_COMPLETE',rows=len(rows));finish(True,'manifest')
+if __name__=='__main__':main()
