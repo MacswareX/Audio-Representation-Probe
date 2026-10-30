@@ -1,0 +1,111 @@
+{
+  "counts": {
+    "train": 36796,
+    "val": 4170,
+    "eval": 10231
+  },
+  "classes": 200,
+  "labels": "one true multilabel row per complete recording; no clip-to-event localization inference",
+  "representations": [
+    "logmel",
+    "e1_z",
+    "e1_q2",
+    "e1_q4",
+    "cnn6",
+    "encodec_z",
+    "encodec_q2",
+    "encodec_q4",
+    "beats"
+  ],
+  "pools": [
+    "G",
+    "T4"
+  ],
+  "training_arms": {
+    "full": 36796,
+    "dedup": 36794
+  },
+  "dedup_removed_train_ids": [
+    "124855",
+    "51749"
+  ],
+  "final_models": 36,
+  "dimensions": {
+    "logmel_G": 128,
+    "logmel_T4": 512,
+    "e1_z_G": 128,
+    "e1_z_T4": 512,
+    "e1_q2_G": 128,
+    "e1_q2_T4": 512,
+    "e1_q4_G": 128,
+    "e1_q4_T4": 512,
+    "cnn6_G": 1024,
+    "cnn6_T4": 4096,
+    "encodec_z_G": 256,
+    "encodec_z_T4": 1024,
+    "encodec_q2_G": 256,
+    "encodec_q2_T4": 1024,
+    "encodec_q4_G": 256,
+    "encodec_q4_T4": 1024,
+    "beats_G": 1536,
+    "beats_T4": 6144
+  },
+  "windowing": {
+    "main_max_seconds": 5,
+    "partition": "n=ceil(original_frames/(5*original_sr)); floor(j*N/n); non-overlap and no discarded tail",
+    "resample": "whole original recording, native sinc_interp_hann width6 rolloff.99 float32; same torchaudio convolution, exact integer ceil output length",
+    "clock": "Original integer boundaries map by floor onto native SR, final output endpoint integer ceil. Within each window native anchors scaled by exact original span / resampled span (<one native sample rounding); original interval weights sum exactly.",
+    "external_extra_padding": 0,
+    "context_reset_per_window": true
+  },
+  "anchors": {
+    "logmel": ".02j for all actual centered STFT columns including exact endpoint; /80 per-window native dB reference",
+    "e1": ".08j with4j<actual mel T; encoder right zero-padding to next256 columns(min256), invalid padded latent centers excluded",
+    "cnn6": ".075+.16j after four native temporal2 pools, frequencymean512",
+    "encodec": "j*320/24000; native ceil(length/320); prequant128, fixed3kbps4of32 codebooks, native cumulative2/4",
+    "beats": ".0875+.16j; native patch Bx768xTx8, flatten verified T-major/frequency-minor, reshape then frequencymean768"
+  },
+  "pooling": "Voronoi cells between valid native anchors, clipped to original window support including endpoints; stable physical-mass weighted mean/populationstd. T4 intersects cells with four full-recording equal-duration bins. Reusing a cell across bins never counts as independent observations.",
+  "estimator": {
+    "objective": "mean squared multilabel loss + lambda Frobenius weight penalty; unpenalized intercept",
+    "lambda_grid": [
+      0.0001,
+      0.001,
+      0.01,
+      0.1,
+      1.0
+    ],
+    "solver_alpha": "N_train * lambda",
+    "normalizer": "corresponding train arm population mean/std only",
+    "constant_std_threshold": 1e-12,
+    "selection": "validation macro AP over all200 classes; exact ties larger lambda; saveall5 scores; no validation refit",
+    "solver": "separate streamed train-arm sufficient-statistics passes, float64 primal lower Gram, F-order scipy eigh evr once, clip only numerical negative eigenvalues; no N squared dual at fullN",
+    "resumption": "factor saved until all5 validation artifacts complete; complete arrays missing metadata recovered; missing selection reconstructed; control records preserved"
+  },
+  "evaluation": {
+    "official_eval": "all10231 only selectedmodels after all36 selections and all9 protocol frozen; saved rawscore reuse",
+    "macro_ap": "group equal score thresholds, noninterpolated recall increments; no pos OR no neg undefined; official200macro only if200defined; report conditional defined-class macro separately",
+    "micro_ap": true,
+    "uncertainty": "2000 paired uploader components merged by exact hash; fixed per-class orders/ties reused with group multiplicity weights; same seed17170911 for each condition; conditionalonmodels; undefined full200 draws reported",
+    "contrast_families": [
+      "q4-q2",
+      "T4-G",
+      "dedup-full",
+      "each representation-CNN6"
+    ],
+    "e1_secondary": "exclude eval IDs overlapping actual E1 ESC trainingfold2/3/4 or validationfold5 source IDs; retain full official main"
+  },
+  "provenance": {
+    "kind": "curated extract; not the original protocol file",
+    "source_member": "ARP_contact_review/evidence/FSD_PROTOCOL.json",
+    "source_sha256": "5c608ef47d518bfabf4bbf700bf290afefac96ba18773fa64806c4218f05cbbf",
+    "omitted": [
+      "historical phase/scope fields",
+      "absolute local dependency paths",
+      "external/native hashes",
+      "resource settings",
+      "context30 proposal"
+    ],
+    "status_authority": "historical_review.md; original phase predates the completed main run"
+  }
+}

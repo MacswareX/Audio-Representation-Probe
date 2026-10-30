@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "status": "DRAFT_PENDING_ORIGINAL_FSD_SOURCE",
+  "source_archive": "ARP_contact_review_20260914.zip",
+  "source_archive_sha256": "dab040547e90e7dd6c0e6fb9a17058ad8a4497316a029f85b72353f72a3e40c6",
+  "scope": "Transferred evidence excerpts and a historical AI-assisted review; no new model execution or prediction replay.",
+  "files": [
+    {
+      "path": "paired_contrasts.json",
+      "source_member": "evidence/FSD_PAIRED_CONTRASTS.json",
+      "bytes": 20912,
+      "sha256": "25146a531979c745e80ca3e4de76335eb285eacb3ad09a62f44b8202af964d3c"
+    },
+    {
+      "path": "historical_review.md",
+      "source_member": "evidence/FSD_PRIOR_REVIEW.md",
+      "bytes": 4897,
+      "sha256": "ae6af46559b5ae6b2900552e2403517bc5541b0b12c9bc1368ebf5398e0b0df1"
+    },
+    {
+      "path": "metrics/e1_q2_G_full_BOOTSTRAP.json",
+      "source_member": "evidence/fsd/e1_q2_G_full_BOOTSTRAP.json",
+      "bytes": 368,
+      "sha256": "18a79e11e630b50f31f744d402b85879edc2ebff852698bb2502e5dca09d0901"
+    },
+    {
+      "path": "metrics/e1_q2_G_full_METRICS.json",
+      "source_member": "evidence/fsd/e1_q2_G_full_METRICS.json",
+      "bytes": 22104,
+      "sha256": "722435f0ce2c79655e5a405c6a86c703a3b9983c2a7ead7cea8301425993dcfe"
+    },
+    {
+      "path": "metrics/e1_q2_G_full_SELECTION.json",
+      "source_member": "evidence/fsd/e1_q2_G_full_SELECTION.json",
+      "bytes": 190,
+      "sha256": "e386e8b625ed598b90765b447587dd261da125cdac1b30a5eec7d1ff249a88dc"
+    },
+    {
+      "path": "metrics/e1_q4_G_full_BOOTSTRAP.json",
+      "source_member": "evidence/fsd/e1_q4_G_full_BOOTSTRAP.json",
+      "bytes": 368,
+      "sha256": "3f918c7ae82ca0b4056c9fcf059b835e2b9641229b750d894a57105f1ff3b8ac"
+    },
+    {
+      "path": "metrics/e1_q4_G_full_METRICS.json",
+      "source_member": "evidence/fsd/e1_q4_G_full_METRICS.json",
+      "bytes": 22082,
+      "sha256": "3aca06e10e07a33f675b2054de88a1165e78ff30c45e25a2b3aa0d512adfe063"
+    },
+    {
+      "path": "metrics/e1_q4_G_full_SELECTION.json",
+      "source_member": "evidence/fsd/e1_q4_G_full_SELECTION.json",
+      "bytes": 190,
+      "sha256": "e386e8b625ed598b90765b447587dd261da125cdac1b30a5eec7d1ff249a88dc"
+    },
+    {
+      "path": "metrics/encodec_q2_G_full_BOOTSTRAP.json",
+      "source_member": "evidence/fsd/encodec_q2_G_full_BOOTSTRAP.json",
+      "bytes": 366,
+      "sha256": "83b4f73cb3f49dae643c4467c8e92c6f3dd90f36ea63685d7ca0ebd655dd9080"
+    },
+    {
+      "path": "metrics/encodec_q2_G_full_METRICS.json",
+      "source_member": "evidence/fsd/encodec_q2_G_full_METRICS.json",
+      "bytes": 22024,
+      "sha256": "3738e6d19bbe9977225dd0f61ed59993366878468f7b5033e0b0607f92067f58"
+    },
+    {
+      "path": "metrics/encodec_q2_G_full_SELECTION.json",
+      "source_member": "evidence/fsd/encodec_q2_G_full_SELECTION.json",
+      "bytes": 190,
+      "sha256": "e386e8b625ed598b90765b447587dd261da125cdac1b30a5eec7d1ff249a88dc"
+    },
+    {
+      "path": "metrics/encodec_q4_G_full_BOOTSTRAP.json",
+      "source_member": "evidence/fsd/encodec_q4_G_full_BOOTSTRAP.json",
+      "bytes": 368,
+      "sha256": "7aaa0d67757edc9906dde0ea7c226aa47c2b85001b3b4b98a100ac36ac388b69"
+    },
+    {
+      "path": "metrics/encodec_q4_G_full_METRICS.json",
+      "source_member": "evidence/fsd/encodec_q4_G_full_METRICS.json",
+      "bytes": 22019,
+      "sha256": "d20b2163009be925a0a1b1c3a56f741b5d621be3d6b5d59116c8a8a767e0eeda"
+    },
+    {
+      "path": "metrics/encodec_q4_G_full_SELECTION.json",
+      "source_member": "evidence/fsd/encodec_q4_G_full_SELECTION.json",
+      "bytes": 190,
+      "sha256": "e386e8b625ed598b90765b447587dd261da125cdac1b30a5eec7d1ff249a88dc"
+    },
+    {
+      "path": "protocol_extract.json",
+      "bytes": 4753,
+      "sha256": "4b3343fbe97dc58fa46526b3d55adad7320b00630658ea663395a918f4a45ede",
+      "derivation": "curated protocol extract"
+    },
+    {
+      "path": "results_reported.csv",
+      "bytes": 3756,
+      "sha256": "63a88b6edd1171b0ecf103a99417497b98abae7ae9cb45bf7ee7f3ca28b75df4",
+      "derivation": "36 rounded values transcribed from historical_review.md"
+    }
+  ]
+}

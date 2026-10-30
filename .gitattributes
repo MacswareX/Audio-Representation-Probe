@@ -1,3 +1,8 @@
 * text=auto eol=lf
 *.npz binary
 *.png binary
+
+# Preserve byte identity of transferred evidence (including historical CRLF).
+evidence/fsd50k/metrics/* -text
+evidence/fsd50k/paired_contrasts.json -text
+evidence/fsd50k/results_reported.csv -text
